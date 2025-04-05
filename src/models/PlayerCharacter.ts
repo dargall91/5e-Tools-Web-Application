@@ -1,8 +1,7 @@
 export interface PlayerCharacterMasterData {
 	stressStatuses: StressStatus[],
 	exhaustionLevels: ExhaustionLevel[],
-	primalCompanionTypes: PrimalCompanionType[],
-	classes: Class[]
+	primalCompanionTypes: PrimalCompanionType[]
 };
 
 export interface PlayerCharacter {

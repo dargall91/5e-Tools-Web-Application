@@ -9,8 +9,8 @@
           <CFormLabel for="campaign" class="fw-bold align-text-bottom">Campaign:</CFormLabel>
         </CCol>
         <CCol xs="9" md="6">
-          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.activeCampaign.value.id.toString()">
-            <option v-for="(item) in campaignStore.campaignList.value" :value="item.id" :key="item.id">{{ item.name }}</option>
+          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.activeCampaign.value.campaignId.toString()">
+            <option v-for="(item) in campaignStore.campaignList.value" :value="item.campaignId" :key="item.campaignId">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
       </CRow>
@@ -42,7 +42,7 @@
         </CCol>
         <CCol class="mt-1" xs="8" md="4" lg="3">
           <CFormSelect @change="setBaseClass(0, parseInt($event.target.value))" id="baseclass">
-            <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+            <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
         <CCol xs="3" md="1" class="mt-2">
@@ -63,7 +63,7 @@
           </CCol>
           <CCol class="mt-1" xs="8" md="4" lg="3">
             <CFormSelect @change="setMultiClass(multiclass, 0, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.subclass.id.toString()">
-              <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+              <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
             </CFormSelect>
           </CCol>
           <CCol xs="3" md="1" class="mt-2">
@@ -79,7 +79,7 @@
           </CCol>
         </CRow>
 
-        <CButton v-if="multiClassList.length < characterStore.masterData.value.classes.length - 1" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
+        <CButton v-if="multiClassList.length < campaignStore.selectedCampaign.value.classes.length - 1" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
       </template>
 
       <CFormCheck class="mt-2" :id="'tough'" label="Tough Feat" v-model="playerCharacter.toughFeat" value="true" />
@@ -441,7 +441,7 @@
         </CCol>
 
         <!-- Resolve -->
-        <CCol xs="6" sm="4" v-if="campaignStore.activeCampaign.value.madness">
+        <CCol xs="6" sm="4" v-if="campaignStore.activeCampaign.value!.usesStress">
           <CCard class="mt-1">
             <CCardHeader>Resolve (RES)</CCardHeader>
             <CCardBody>
@@ -544,17 +544,17 @@
       },
       setBaseClass(classId: number, subclassId: number) {
         this.playerCharacter.characterClasses[0].subclass
-          = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
+          = this.campaignStore.selectedCampaign.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
       },
       setBaseLevel(level: number) {
         this.playerCharacter.characterClasses[0].level = level;
       },
       addMulticlass() {
-        if (this.multiClassList.length < this.characterStore.masterData.value.classes.length - 1) {
+        if (this.multiClassList.length < this.campaignStore.selectedCampaign.value.classes.length - 1) {
           let newClassLevel = {
               baseClass: false,
               level: 1,
-              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+              subclass: this.campaignStore.selectedCampaign.value.classes[0].subclasses[0]
             } as CharacterClass;
           this.multiClassList.push(newClassLevel);
         }
@@ -563,7 +563,7 @@
         this.multiClassList.splice(index, 1);
       },
       setMultiClass(multiclass: CharacterClass, classId: number, subclassId: number) {
-        multiclass.subclass = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
+        multiclass.subclass = this.campaignStore.selectedCampaign.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
       },
       setStrength(score: number) {
         this.playerCharacter.strength.score = score;
@@ -715,7 +715,7 @@
             { 
               baseClass: true,
               level: 1,
-              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+              subclass: this.campaignStore.selectedCampaign.value.classes[0].subclasses[0]
             } as CharacterClass
           ] as CharacterClass[]
         } as PlayerCharacter;
@@ -724,7 +724,7 @@
         let error = false;
 
         //campiagn validator
-        if (this.campaignStore.selectedCampaign.value.id === 0) {
+        if (this.campaignStore.selectedCampaign.value.campaignId === 0) {
           error = true;
           this.errorToasts.push(
             { title: "Submission Error:", body: "No campaign selected"}
@@ -795,7 +795,7 @@
         if (!error) {
           this.playerCharacter.characterClasses.push(...this.multiClassList);
 
-          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter, this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id).then(() => {
+          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter, this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId).then(() => {
             this.successToasts.push(
               { title: "Success!", body: `${this.playerCharacter.name} created`}
             );
@@ -804,7 +804,7 @@
             this.multiClassList = [];
           });
 
-          useCharacterStore().getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id);
+          useCharacterStore().getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
         }
       }
     },
@@ -812,8 +812,8 @@
       this.getCampaignList();
       this.getActiveCampaign();
       this.initPlayerCharacter();
-      this.getMasterData(this.campaignStore.selectedCampaign.value.id);
-      this.setCampaign(this.campaignStore.selectedCampaign.value.id);
+      this.getMasterData(this.campaignStore.selectedCampaign.value.campaignId);
+      this.setCampaign(this.campaignStore.selectedCampaign.value.campaignId);
     } 
   });
 </script>

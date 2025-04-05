@@ -6,8 +6,8 @@
       <CFormLabel for="campaign" class="fw-bold align-text-bottom">Campaign:</CFormLabel>
     </CCol>
     <CCol xs="9" sm="8" md="6">
-      <CFormSelect @change="onCampaignChanged(parseInt($event.target.value))" id="campaign" :model-value="campaignStore.selectedCampaign.value.id.toString()">
-        <option v-for="(item) in campaignStore.campaignList.value" :value="item.id" :key="item.id">{{ item.name }}</option>
+      <CFormSelect @change="onCampaignChanged(parseInt($event.target.value))" id="campaign" :model-value="campaignStore.selectedCampaign.value.campaignId.toString()">
+        <option v-for="(item) in campaignStore.campaignList.value" :value="item.campaignId" :key="item.campaignId">{{ item.name }}</option>
       </CFormSelect>
     </CCol>
   </CRow>
@@ -385,7 +385,7 @@
                 </CCol>
 
                 <!-- Resolve -->
-                <CCol xs="6" sm="4" v-if="campaignStore.selectedCampaign.value.madness">
+                <CCol xs="6" sm="4" v-if="campaignStore.selectedCampaign.value.usesStress">
                   <CCard class="mt-2">
                     <CCardHeader>Resolve (RES): {{ character.resolve!.score }} ({{ getScoreModifierString(character.resolve!.score) }})</CCardHeader>
                     <CCardBody>
@@ -806,10 +806,10 @@
         <li>Recover hit dice equal to half of your total level (minimum of 1, if multiclassed your largest hit dice are prioritized)</li>
         <li v-if="characterStoreFunctions.isBeastmaster(indexToModify) != null">Your Primal Companion recovers hit dice equal to half of your Ranger level (minimum of 1)</li>
         <li>Recover all expended spell slots</li>
-        <li v-if="campaignStore.selectedCampaign.value.madness">If your stress level is greater than your stress threshold, it becomes equal to your threshold</li>
-        <li v-if="campaignStore.selectedCampaign.value.madness">If your stress level is less than or equal to your stress threshold, you lose 50 stress</li>
-        <li v-if="campaignStore.selectedCampaign.value.madness">Lose your Affliction or Virtue if you have one</li>
-        <li v-if="campaignStore.selectedCampaign.value.madness">Recover 5 meditation dice</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is greater than your stress threshold, it becomes equal to your threshold</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is less than or equal to your stress threshold, you lose 50 stress</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">Lose your Affliction or Virtue if you have one</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">Recover 5 meditation dice</li>
       </ul>
 
       *Rounding is always down unless specified otherwise
@@ -842,7 +842,7 @@
         </CCol>
       </CRow>
       <CButton size="sm" v-if="campaignStore.selectedCampaign.value.allowsMulticlassing
-        && !levelUp && characterStore.characterList.value[indexToModify].characterClasses.length < characterStore.masterData.value.classes.length
+        && !levelUp && characterStore.characterList.value[indexToModify].characterClasses.length < campaignStore.selectedCampaign.value.classes.length
         && newMulticlass.subclass.id === 0 && characterStoreFunctions.getTotalLevels(indexToModify) < 20" 
         color="dark" @click="setNewMulticlass(1)">
           Add Multiclass
@@ -853,7 +853,7 @@
         </CCol>
         <CCol xs="5" sm="3">
           <CFormSelect @change="setNewMulticlass(parseInt($event.target.value))" :id="'multiClass'">
-            <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+            <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
         <CCol>
@@ -1228,7 +1228,7 @@
         </CCol>
 
         <!-- Resolve -->
-        <CCol xs="6" sm="4" v-if="campaignStore.selectedCampaign.value.madness">
+        <CCol xs="6" sm="4" v-if="campaignStore.selectedCampaign.value.usesStress">
           <CCard class="mt-2">
             <CCardHeader>Resolve (RES)</CCardHeader>
             <CCardBody>
@@ -1383,7 +1383,7 @@
       async onCampaignChanged(id: number) {
         this.setSelectedCampaign(id);
         if (id != 0) {
-          await this.getCharacterList(this.userStore.user.value?.id as number, this.campaignStore.activeCampaign.value.id);
+          await this.getCharacterList(this.userStore.user.value?.id as number, this.campaignStore.activeCampaign.value.campaignId);
         } else {
           this.clearCharacterList();
         }
@@ -1510,7 +1510,7 @@
       async closeKillCharacterAndSave() {
         this.killCharacter = false;
         await this.characterStoreFunctions.killCharacter(this.indexToModify);
-        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id);
+        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
         this.indexToModify = -1;
       },
       showReviveCharacter() {
@@ -1526,19 +1526,19 @@
       },
       async closeReviveCharacterAndRevive() {
         await this.characterStoreFunctions.reviveCharacter(this.idToRevive);
-        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id);
+        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
         this.reviveCharacter = false;
         this.idToRevive = 0;
       }
     },
     async mounted() {
-      if (this.campaignStore.activeCampaign.value.id === 0) {
+      if (this.campaignStore.activeCampaign.value.campaignId === 0) {
         await this.getCampaignList();
         await this.getActiveCampaign();
       }
       
-      await this.characterStoreFunctions.getMasterData(this.campaignStore.selectedCampaign.value.id);
-      await this.getCharacterList(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id);
+      await this.characterStoreFunctions.getMasterData(this.campaignStore.selectedCampaign.value.campaignId);
+      await this.getCharacterList(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
     }
   });
 </script>
