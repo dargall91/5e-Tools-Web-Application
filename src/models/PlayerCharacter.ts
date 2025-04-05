@@ -1,31 +1,26 @@
 export interface PlayerCharacterMasterData {
-	characterClasses: CharacterClass[],
-	proficiencyBonuses: ProficiencyBonus[],
 	stressStatuses: StressStatus[],
-	spellSlots: SpellSlots[],
-	warlockSpellSlots: WarlockSpellSlots[],
-	primalCompanionTypes: PrimalCompanionType[]
-}
+	exhaustionLevels: ExhaustionLevel[],
+	primalCompanionTypes: PrimalCompanionType[],
+	classes: Class[]
+};
 
 export interface PlayerCharacter {
-	id: number,
-	campaignId: number,
-	userId: number,
+	playerCharacterId: number,
 	name: string,
-	ac: number,
-	acBonus: number,
+	baseArmorClass: number,
+	armorClassBonus: number,
 	damage: number,
+	hitPointMaximum: number,
 	temporaryHitPoints: number,
-	maxHpReduction: number,
-	dead: boolean,
-	deathSaveSuccesses: number,
+	maxHitPointReduction: number,
 	deathSaveFailures: number,
-	stress: number,
-	meditationDiceUsed: number,
-	dwarvenToughness: boolean,
+	deathSaveSuccesses: number,
 	toughFeat: boolean,
-	stressStatus: StressStatus,
-	combatant: boolean,
+	exhaustionLevel: number,
+	spellcasterLevel: number,
+	warlockLevel: number,
+	proficiencyBonus: number,
 	strength: Strength,
 	dexterity: Dexterity,
 	constitution: Constitution,
@@ -33,20 +28,20 @@ export interface PlayerCharacter {
 	wisdom: Wisdom,
 	charisma: Charisma,
 	resolve: Resolve | null,
-	classLevelList: ClassLevel[],
-	spellSlots: SpellSlots | null,
-	warlockSpellSlots: WarlockSpellSlots | null
-	firstSlotsUsed: number,
-	secondSlotsUsed: number,
-	thirdSlotsUsed: number,
-	fourthSlotsUsed: number,
-	fifthSlotsUsed: number,
-	sixthSlotsUsed: number,
-	seventhSlotsUsed: number,
-	eighthSlotsUsed: number,
-	ninthSlotsUsed: number,
-	warlockSlotsUsed: number,
-	primalCompanion: PrimalCompanion | null
+	stress: Stress | null,
+	usedSpellSlots: UsedSpellSlots | null,
+	characterClasses: CharacterClass[],
+	spellSlots: SpellSlots | null
+	warlockSpellSlots: WarlockSpellSlots | null,
+	isJackOfAllTrades: boolean | null
+};
+
+export interface Stress {
+	stressLevel: number;
+	stressThreshold: number;
+	stressMaximum: number;
+	meditationDiceUsed: number;
+	stressStatus: StressStatus | null;
 };
 
 interface AbilityScore {
@@ -65,8 +60,7 @@ export interface Dexterity extends AbilityScore {
 	stealth: number,
 };
 
-export interface Constitution extends AbilityScore {
-};
+export interface Constitution extends AbilityScore { };
 
 export interface Intelligence extends AbilityScore {
 	arcana: number,
@@ -91,29 +85,21 @@ export interface Charisma extends AbilityScore {
 	persuasion: number,
 };
 
-export interface Resolve extends AbilityScore {
-};
-
-export interface ClassLevel {
-	id: number,
-	baseClass: boolean,
-	levels: number,
-	usedHitDice: number,
-	eldritchKnight: boolean,
-	arcaneTrickster: boolean,
-	beastMaster: boolean,
-	characterClass: CharacterClass
-};
+export interface Resolve extends AbilityScore { };
 
 export interface CharacterClass {
+	level: number,
+	hitDiceUsed: number,
+	baseClass: boolean,
+	subclass: Subclass,
+	primalCompanion: PrimalCompanion | null
+};
+
+export interface Subclass {
 	id: number,
 	name: string,
-	hitDie: number,
-	averageHitDie: number,
-	fullCaster: boolean,
-	halfCaster: boolean,
-	artificer: boolean,
-	warlock: boolean
+	classHitDieSize: number,
+	jackOfAllTrades: boolean
 };
 
 export interface StressStatus {
@@ -128,52 +114,73 @@ export interface StressStatus {
 export interface ProficiencyBonus {
 	level: number,
 	bonus: number
-}
+};
 
-export interface SpellSlots {
-	casterLevel: number,
-	first: number,
-	second: number,
-	third: number,
-	fourth: number,
-	fifth: number,
-	sixth: number,
-	seventh: number,
-	eighth: number,
-	ninth: number
-}
+export interface ExhaustionLevel {
+	id: number,
+	description: string
+};
 
-export interface WarlockSpellSlots {
-	warlockLevel: number,
-	quantity: number,
-	slotLevel: number
-}
-
-export interface PrimalCompanion {
+export interface Class {
 	id: number,
 	name: string,
-	damage: number,
-	temporaryHitPoints: number,
-	acBonus: number,
-	hitDiceUsed: number,
-	deathSaveSuccesses: number,
-	deathSaveFailures: number,
-	maxHpReduction: number,
-	baseArmorClass: number,
-	senses: string,
-	languages: string,
-	alignment: string,
-	type: string,
-	primalCompanionType: PrimalCompanionType
+	hitDieSize: number,
+	classAbilityScore: string
+	subclasses: Subclass[]
+};
+
+interface BaseSpellSlots {
+	firstLevel: number,
+	secondLevel: number,
+	thirdLevel: number,
+	fourthLevel: number,
+	fifthLevel: number,
+	sixthLevel: number,
+	seventhLevel: number,
+	eighthLevel: number,
+	ninthLevel: number
+};
+
+export interface SpellSlots extends BaseSpellSlots {
+	id: number
 }
+
+export interface UsedSpellSlots extends BaseSpellSlots {
+	warlock: number
+};
+
+export interface WarlockSpellSlots {
+	id: number,
+	slots: number,
+	level: number
+};
+
+export interface PrimalCompanion {
+	name: string,
+	hitPointMaximum: number,
+	armorClassBonus: number,
+	damage: number,
+	maxHitPointReduction: number,
+	temporaryHitPoints: number,
+	deathSaveFailures: number,
+	deathSaveSuccesses: number,
+	hitDiceUsed: number,
+	strengthOverride: number | null,
+	dexterityOverride: number | null,
+	constitutionOverride: number | null,
+	intelligenceOverride: number | null,
+	wisdomOverride: number | null,
+	charismaOverride: number | null,
+	primalCompanionType: PrimalCompanionType
+};
 
 export interface PrimalCompanionType {
 	id: number,
 	name: string,
-	size: string,
+	hitPointMultiplier: number,
+	hitDieSize: number,
 	speed: string,
-	baseHitPoints: number,
-	hitDie: number,
+	size: string,
 	strength: number,
 	dexterity: number,
 	constitution: number,
@@ -184,4 +191,4 @@ export interface PrimalCompanionType {
 	abilityDescription: string,
 	actionName: string,
 	actionDescription: string
-}
+};

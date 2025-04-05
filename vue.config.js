@@ -6,11 +6,11 @@ module.exports = defineConfig({
     port: 3000,
     https: true,
     proxy: {
-      '^/5eTools/api/': {
-        target: 'https://localhost:8080',
+      '^/api/v1/': {
+        target: 'https://localhost:7275',
         changeOrigin: true,
         ws: true,
-        hostRewrite: 'localhost:8080'
+        hostRewrite: 'localhost:7275'
       }
     }
   }

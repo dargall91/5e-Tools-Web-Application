@@ -1,8 +1,9 @@
+import { ResponseWrapper } from '@/models/ResponseWrapper';
 import axios, { AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 
 const requestHandler = (request: InternalAxiosRequestConfig) => request;
 
-const responseHandler = async (response: AxiosResponse) => response;
+const responseHandler = async <T>(response: AxiosResponse<ResponseWrapper<T>>) => response;
 
 const errorHandler = (error: AxiosError): Promise<never> => {
     if (!error.response) {
@@ -23,14 +24,13 @@ const errorHandler = (error: AxiosError): Promise<never> => {
         }
     } else if (status === 500) {
         console.log(data);
-
     }
 
     return Promise.reject(error);
 }
 
 const axiosInstance = axios.create({
-    baseURL: '/5eTools/api/',
+    baseURL: '/api/',
     timeout: 4000,
 });
 

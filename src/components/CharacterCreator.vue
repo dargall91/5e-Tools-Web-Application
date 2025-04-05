@@ -31,7 +31,7 @@
           <CFormLabel for="armorClass" class="fw-bold align-text-bottom">Armor Class:</CFormLabel>
         </CCol>
         <CCol xs="3">
-          <CFormInput id="armorClass" min="1" max="30" v-model.number="playerCharacter.ac" type="number"></CFormInput>
+          <CFormInput id="armorClass" min="1" max="30" v-model.number="playerCharacter.baseArmorClass" type="number"></CFormInput>
         </CCol>
       </CRow>
 
@@ -41,8 +41,8 @@
           <CFormLabel for="baseclass" class="fw-bold">Base Class:</CFormLabel>
         </CCol>
         <CCol class="mt-1" xs="8" md="4" lg="3">
-          <CFormSelect @change="setBaseClass(parseInt($event.target.value))" id="baseclass">
-            <option v-for="(item) in characterStore.masterData.value.characterClasses" :value="item.id" :key="item.id">{{ item.name }}</option>
+          <CFormSelect @change="setBaseClass(0, parseInt($event.target.value))" id="baseclass">
+            <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
         <CCol xs="3" md="1" class="mt-2">
@@ -53,49 +53,36 @@
             <option v-for="level in numberList" :value="level" :key="level">{{ level }}</option>
           </CFormSelect>
         </CCol>
-        <CCol class="mt-2" xs="5" sm="3" v-if="playerCharacter.classLevelList != undefined">
-          <CFormCheck v-show="canBeArcaneTrickster(playerCharacter.classLevelList[0])" :id="'baseArcaneTrickster'" label="Arcane Trickster" v-model="playerCharacter.classLevelList[0].arcaneTrickster" value="true" />
-          <CFormCheck v-show="canBeEldritchKnight(playerCharacter.classLevelList[0])" :id="'baseEldritchKnight'" label="Eldritch Knight" v-model="playerCharacter.classLevelList[0].eldritchKnight" value="true" />
-          <CFormCheck v-show="canBeBeastmaster(playerCharacter.classLevelList[0])" :id="'baseBeastmaster'" label="Beastmaster" v-model="playerCharacter.classLevelList[0].beastMaster" value="true" />
-        </CCol>
       </CRow>
 
       <!-- multiclass -->
-      <CRow v-for="(multiclass, index) in multiClassList" :id="index.toString()" :key="index" class="mt-1">
-        <CCol xs="4" md="2" class="mt-2">
-          <CFormLabel :for="'multiClass' + index" class="fw-bold">Multiclass:</CFormLabel>
-        </CCol>
-        <CCol class="mt-1" xs="8" md="4" lg="3">
-          <CFormSelect @change="setMultiClass(multiclass, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.characterClass.id.toString()">
-            <option v-for="(item) in characterStore.masterData.value.characterClasses" :value="item.id" :key="item.id">{{ item.name }}</option>
-          </CFormSelect>
-        </CCol>
-        <CCol xs="3" md="1" class="mt-2">
-          <CFormLabel :for="'multiClassLevel' + index" class="fw-bold">Level:</CFormLabel>
-        </CCol>
-        <CCol class="mt-1" xs="3" md="2" lg="1">
-          <CFormSelect @change="($event) => {multiclass.levels = parseInt($event.target.value)}" :id="'multiClassLevel' + index" :key="index">
-            <option v-for="level in numberList" :value="level" :key="level">{{ level }}</option>
-          </CFormSelect>
-        </CCol>
-        <CCol class="mt-2" xs="5" sm="3" lg="2" v-if="canBeArcaneTrickster(multiclass)">
-          <CFormCheck :id="'multircaneTrickster' + index" label="Arcane Trickster" v-model="multiclass.arcaneTrickster" value="true" />
-        </CCol>
-        <CCol class="mt-2" xs="5" sm="3" lg="2" v-if="canBeEldritchKnight(multiclass)">
-          <CFormCheck :id="'multiEldritchKnight' + index" label="Eldritch Knight" v-model="multiclass.eldritchKnight" value="true" />
-        </CCol>
-        <CCol class="mt-2" xs="5" sm="3" lg="2" v-if="canBeBeastmaster(multiclass)">
-          <CFormCheck :id="'multiBeastmaster' + index" label="Beastmaster" v-model="multiclass.beastMaster" value="true" />
-        </CCol>
-        <CCol class="mt-1">
-          <CButton color="dark" type="button" @click="removeMulticlass(index)" class="btn btn-primary">Remove Mulitclass</CButton>
-        </CCol>
-      </CRow>
+      <template v-for="(multiclass, index) in multiClassList" :id="index.toString()" :key="index">
+        <CRow v-if="campaignStore.selectedCampaign.value.allowsMulticlassing" class="mt-1">
+          <CCol xs="4" md="2" class="mt-2">
+            <CFormLabel :for="'multiClass' + index" class="fw-bold">Multiclass:</CFormLabel>
+          </CCol>
+          <CCol class="mt-1" xs="8" md="4" lg="3">
+            <CFormSelect @change="setMultiClass(multiclass, 0, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.subclass.id.toString()">
+              <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol xs="3" md="1" class="mt-2">
+            <CFormLabel :for="'multiClassLevel' + index" class="fw-bold">Level:</CFormLabel>
+          </CCol>
+          <CCol class="mt-1" xs="3" md="2" lg="1">
+            <CFormSelect @change="($event) => {multiclass.level = parseInt($event.target.value)}" :id="'multiClassLevel' + index" :key="index">
+              <option v-for="level in numberList" :value="level" :key="level">{{ level }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol class="mt-1">
+            <CButton color="dark" type="button" @click="removeMulticlass(index)" class="btn btn-primary">Remove Mulitclass</CButton>
+          </CCol>
+        </CRow>
 
-      <CButton v-if="multiClassList.length < 12" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
+        <CButton v-if="multiClassList.length < characterStore.masterData.value.classes.length - 1" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
+      </template>
 
       <CFormCheck class="mt-2" :id="'tough'" label="Tough Feat" v-model="playerCharacter.toughFeat" value="true" />
-      <CFormCheck :id="'dwarf'" label="Dwarven Toughness" v-model="playerCharacter.dwarvenToughness" value="true" />
 
       <!-- Ability Scores -->
       <CRow>
@@ -510,7 +497,7 @@
   import { useCampaignStore } from '@/stores/CampaignStore'
   import { useCharacterStore } from '@/stores/CharacterStore'
   import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormCheck, CFormInput, CFormLabel, CFormSelect, CRow, CToast, CToastBody, CToaster, CToastHeader } from '@coreui/vue'
-  import { CharacterClass, ClassLevel, PlayerCharacter, Resolve } from '@/models/PlayerCharacter'
+  import { CharacterClass, PlayerCharacter, Subclass } from '@/models/PlayerCharacter'
   import agent from '@/api/agent'
   
   export default defineComponent({
@@ -540,7 +527,7 @@
           { level: 1, value: "Proficient"},
           { level: 2, value: "Expertise"},
         ],
-        multiClassList: [] as ClassLevel[],
+        multiClassList: [] as CharacterClass[],
         playerCharacter: { } as PlayerCharacter,
         errorToasts: [] as any,
         successToasts: [] as any,
@@ -554,35 +541,29 @@
         }
 
         this.setSelectedCampaign(id);
-        this.playerCharacter.campaignId = id;
       },
-      setBaseClass(id: number) {
-        this.playerCharacter.classLevelList[0].characterClass = this.characterStore.masterData.value.characterClasses.find(x => x.id === id) as CharacterClass;
-        this.playerCharacter.classLevelList[0].arcaneTrickster = false;
-        this.playerCharacter.classLevelList[0].eldritchKnight = false;
-        this.playerCharacter.classLevelList[0].beastMaster = false;
+      setBaseClass(classId: number, subclassId: number) {
+        this.playerCharacter.characterClasses[0].subclass
+          = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
       },
       setBaseLevel(level: number) {
-        this.playerCharacter.classLevelList[0].levels = level;
+        this.playerCharacter.characterClasses[0].level = level;
       },
       addMulticlass() {
-        if (this.multiClassList.length < this.characterStore.masterData.value.characterClasses.length - 1) {
+        if (this.multiClassList.length < this.characterStore.masterData.value.classes.length - 1) {
           let newClassLevel = {
               baseClass: false,
-              levels: 1,
-              beastMaster: false,
-              arcaneTrickster: false,
-              eldritchKnight: false,
-              characterClass: this.characterStore.masterData.value.characterClasses.find(x => x.id === 1)
-            } as ClassLevel;
+              level: 1,
+              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+            } as CharacterClass;
           this.multiClassList.push(newClassLevel);
         }
       },
       removeMulticlass(index: number) {
         this.multiClassList.splice(index, 1);
       },
-      setMultiClass(multiclass: ClassLevel, id: number) {
-        multiclass.characterClass = this.characterStore.masterData.value.characterClasses.find(x => x.id === id) as CharacterClass;
+      setMultiClass(multiclass: CharacterClass, classId: number, subclassId: number) {
+        multiclass.subclass = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
       },
       setStrength(score: number) {
         this.playerCharacter.strength.score = score;
@@ -681,17 +662,13 @@
       },
       initPlayerCharacter() {
         this.playerCharacter = {
-          userId: this.userStore.user.value?.id,
           name: "",
-          ac: 10,
-          acBonus: 0,
+          baseArmorClass: 10,
+          armorClassBonus: 0,
           temporaryHitPoints: 0,
-          dead: false,
           deathSaveSuccesses: 0,
           deathSaveFailures: 0,
-          stress: 0,
-          stressStatus: { id: 1 },
-          combatant: false,
+          stress: null,
           strength: { 
             score: 10,
             proficient: false,
@@ -734,34 +711,20 @@
             performance: 0,
             persuasion: 0
           },
-          resolve: {score: 10 } as Resolve,
-          classLevelList: [
+          characterClasses: [
             { 
               baseClass: true,
-              levels: 1,
-              beastMaster: false,
-              arcaneTrickster: false,
-              eldritchKnight: false,
-              characterClass: this.characterStore.masterData.value.characterClasses.find(x => x.id === 1)
-            } as ClassLevel
-          ] as ClassLevel[]
+              level: 1,
+              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+            } as CharacterClass
+          ] as CharacterClass[]
         } as PlayerCharacter;
-      },
-      canBeArcaneTrickster(classLevel: ClassLevel) {
-        return classLevel.characterClass.name === "Rogue" && classLevel.levels >= 3;
-      },
-      canBeEldritchKnight(classLevel: ClassLevel) {
-        return classLevel.characterClass.name === "Fighter" && classLevel.levels >= 3;
-      },
-      canBeBeastmaster(classLevel: ClassLevel) {
-        return classLevel.characterClass.name === "Ranger" && classLevel.levels >= 3;
       },
       async submit() {
         let error = false;
-        this.playerCharacter.campaignId = this.campaignStore.selectedCampaign.value.id;
 
         //campiagn validator
-        if (this.playerCharacter.campaignId === 0) {
+        if (this.campaignStore.selectedCampaign.value.id === 0) {
           error = true;
           this.errorToasts.push(
             { title: "Submission Error:", body: "No campaign selected"}
@@ -778,7 +741,7 @@
         }
 
         //validate base class
-        if (this.playerCharacter.classLevelList[0].characterClass.id === 0) {
+        if (this.playerCharacter.characterClasses[0].subclass.id === 0) {
           error = true;
           this.errorToasts.push(
             { title: "Submission Error:", body: "No base class selected"}
@@ -787,14 +750,14 @@
 
         //validate each multiclass
         this.multiClassList.forEach((classLevel, index) => {
-          if (classLevel.characterClass.id === 0) {
+          if (classLevel.subclass.id === 0) {
             error = true;
             this.errorToasts.push(
               { title: "Submission Error:", body: "No multiclass selected"}
             );
           } else {
             //check for duplicate multiclasses
-            const duplicateMulticlass = this.multiClassList.slice(index + 1, this.multiClassList.length).find(x => x.characterClass.id === classLevel.characterClass.id);
+            const duplicateMulticlass = this.multiClassList.slice(index + 1, this.multiClassList.length).find(x => x.subclass.id === classLevel.subclass.id);
 
             if (duplicateMulticlass != undefined) {
               error = true;
@@ -806,7 +769,7 @@
         });
 
         //search for duplicates of base class
-        const matchBaseClass = this.multiClassList.find(x => x.characterClass.id === this.playerCharacter.classLevelList[0].characterClass.id);
+        const matchBaseClass = this.multiClassList.find(x => x.subclass.id === this.playerCharacter.characterClasses[0].subclass.id);
 
         if (matchBaseClass != undefined) {
           error = true;
@@ -816,10 +779,10 @@
         }
 
         //validate levels
-        let totalLevels = this.playerCharacter.classLevelList[0].levels;
+        let totalLevels = this.playerCharacter.characterClasses[0].level;
 
         this.multiClassList.forEach(classLevel => {
-          totalLevels += classLevel.levels;
+          totalLevels += classLevel.level;
         });
 
         if (totalLevels > 20) {
@@ -830,9 +793,9 @@
         }
 
         if (!error) {
-          this.playerCharacter.classLevelList.push(...this.multiClassList);
+          this.playerCharacter.characterClasses.push(...this.multiClassList);
 
-          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter).then(() => {
+          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter, this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id).then(() => {
             this.successToasts.push(
               { title: "Success!", body: `${this.playerCharacter.name} created`}
             );
@@ -849,7 +812,7 @@
       this.getCampaignList();
       this.getActiveCampaign();
       this.initPlayerCharacter();
-      this.getMasterData();
+      this.getMasterData(this.campaignStore.selectedCampaign.value.id);
       this.setCampaign(this.campaignStore.selectedCampaign.value.id);
     } 
   });
