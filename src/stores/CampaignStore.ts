@@ -12,17 +12,17 @@ export const useCampaignStore = defineStore({
   actions: {
     async getCampaignList() {
       await agent.campaign.getCampaignList().then((data) => {
-        this.campaignList = data;
+        this.campaignList = data!;
       })
     },
     async getActiveCampaign() {
       await agent.campaign.getActiveCampaign().then((data) => {
-        this.activeCampaign = data;
-        this.selectedCampaign = data;
+        this.activeCampaign = data!;
+        this.selectedCampaign = data!;
       })
     },
     setSelectedCampaign(id: number) {
-      this.selectedCampaign = { id: 0} as Campaign;
+      this.selectedCampaign = { id: 0 } as Campaign;
     }
   }
 });

@@ -3,4 +3,5 @@ export interface Campaign {
 	name: string;
 	madness: boolean;
 	inflatedHitPoints: number;
-}
+	allowsMulticlassing: boolean;
+};

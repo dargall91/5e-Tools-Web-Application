@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia'
 import agent from '@/api/agent';
-import { ClassLevel, PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, SpellSlots, StressStatus, WarlockSpellSlots } from '@/models/PlayerCharacter';
-import { Campaign } from '@/models/Campaign';
+import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus } from '@/models/PlayerCharacter';
 
 const updateDelay = 3000;
 let updateTimer: number | undefined;
+let baseUpdateTimer: number | undefined;
+let stressUpdateTimer: number | undefined;
 
 export const useCharacterStore = defineStore({
   id: 'character',
@@ -14,9 +15,9 @@ export const useCharacterStore = defineStore({
     deadCharacterList: [] as PlayerCharacter[]
   }),
   actions: {
-    async getMasterData() {
-      await agent.playerCharacter.getMasterData().then((data) => {
-        this.masterData = data;
+    async getMasterData(campaignId: number) {
+      await agent.playerCharacter.getMasterData(campaignId).then((data) => {
+        this.masterData = data!;
       })
     },
     async getCharacterLists(userId: number, campaignId: number) {
@@ -25,57 +26,37 @@ export const useCharacterStore = defineStore({
         return;
       }
       
-      await agent.playerCharacter.getAliveCharacterList(userId, campaignId)
+      await agent.playerCharacter.getCharacters(userId, campaignId, false)
         .then((data) => {
-          this.characterList = data;
+          this.characterList = data!;
         });
 
-      this.characterList.forEach((character) => {
-        this.setSpellSlots(character);
-      });
 
-      await agent.playerCharacter.getDeadCharacterList(userId, campaignId)
+      await agent.playerCharacter.getCharacters(userId, campaignId, true)
         .then((data) => {
-          this.deadCharacterList = data;
+          this.deadCharacterList = data!;
         });
-    },
-    setSpellSlots(character: PlayerCharacter) {
-      let spellCasterLevel = 0;
-      //roudning is different for 1/2 and 1/3 casters when multiclassed
-      //they round down when multiclassed, and up when single classed
-      //however they both need to reach a minimum level to gain slots
-      character.classLevelList.forEach((classLevel) => {
-        if ((classLevel.arcaneTrickster || classLevel.eldritchKnight) && classLevel.levels >= 3) {
-          if (character.classLevelList.length === 1) {
-            spellCasterLevel += Math.ceil(classLevel.levels / 3);
-          } else {
-            spellCasterLevel += Math.floor(classLevel.levels / 3);
-          }
-        } else if (classLevel.characterClass.fullCaster) {
-          spellCasterLevel += classLevel.levels;
-        } else if (classLevel.characterClass.halfCaster && classLevel.levels >= 2) {
-          if (character.classLevelList.length === 1) {
-            spellCasterLevel += Math.ceil(classLevel.levels / 2);
-          } else {
-            spellCasterLevel += Math.floor(classLevel.levels / 2);
-          }
-        } else if (classLevel.characterClass.artificer) {
-          spellCasterLevel += Math.ceil(classLevel.levels / 2);
-        } else if (classLevel.characterClass.warlock) {
-          character.warlockSpellSlots = this.masterData.warlockSpellSlots.find(x => x.warlockLevel === classLevel.levels) as WarlockSpellSlots;
-        }
-      });
-
-      if (spellCasterLevel > 0) {
-        character.spellSlots = this.masterData.spellSlots.find(x => x.casterLevel === spellCasterLevel) as SpellSlots;
-      }
     },
     async saveCharacter(index: number) {
       await agent.playerCharacter.updatePlayerCharacter(this.characterList[index])
         .then((data) => {
-          this.characterList[index] = data;
-          this.setSpellSlots(this.characterList[index]);
+          this.characterList[index] = data!;
         });
+    },
+    async saveCharacterBase(index: number) {
+      await agent.playerCharacter.updatePlayerCharacterBase(this.characterList[index]);
+    },
+    async saveStress(index: number) {
+      if (this.characterList[index].stress !== null)
+      {
+        await agent.playerCharacter.updateStress(this.characterList[index].playerCharacterId, this.characterList[index].stress)
+          .then((data) => {
+            //stress status is not transferred, preseve value
+            var stressStatus = this.characterList[index].stress!.stressStatus;
+            this.characterList[index].stress = data!;
+            this.characterList[index].stress!.stressStatus = stressStatus;
+          });
+      }      
     },
     clearCharacterList() {
       this.characterList = [];
@@ -171,54 +152,29 @@ export const useCharacterStore = defineStore({
       this.characterList[index].charisma.persuasion = level;
     },
     setResolve(score: number, index: number) {
-      if (this.characterList[index].resolve != null) {
-        this.characterList[index].resolve!.score = score;
+      if (this.characterList[index].resolve !== null) {
+        this.characterList[index].resolve.score = score;
       }
-    },
-    getMaxHitPoints(index: number, campaign: Campaign): number {
-      const conModifier = Math.floor((this.characterList[index].constitution.score - 10) / 2.0);
-      let maxHitPoints = 0;
-
-      this.characterList[index].classLevelList.forEach((classLevel) => {
-        if (classLevel.baseClass) {
-          maxHitPoints += (classLevel.characterClass.hitDie + conModifier) + (classLevel.levels - 1) * (classLevel.characterClass.averageHitDie + conModifier);
-        } else {
-          maxHitPoints += (classLevel.levels) * (classLevel.characterClass.averageHitDie + conModifier);
-          
-        }
-
-        if (this.characterList[index].dwarvenToughness) {
-          maxHitPoints += classLevel.levels;
-        }
-
-        if (this.characterList[index].toughFeat) {
-          maxHitPoints += 2 * classLevel.levels;
-        }
-      });
-
-      if (campaign.inflatedHitPoints) {
-        maxHitPoints = Math.ceil(1.5 * maxHitPoints);
-      }
-      
-      return maxHitPoints - this.characterList[index].maxHpReduction;
     },
     adjustHitDie(characterIndex: number, classLevelindex: number, amount: number) {
-      this.characterList[characterIndex].classLevelList[classLevelindex].usedHitDice += amount;
+      this.characterList[characterIndex].characterClasses[classLevelindex].hitDiceUsed += amount;
 
-      if (this.characterList[characterIndex].classLevelList[classLevelindex].usedHitDice >= this.characterList[characterIndex].classLevelList[classLevelindex].levels) {
-        this.characterList[characterIndex].classLevelList[classLevelindex].usedHitDice = this.characterList[characterIndex].classLevelList[classLevelindex].levels;
+      if (this.characterList[characterIndex].characterClasses[classLevelindex].hitDiceUsed >= this.characterList[characterIndex].characterClasses[classLevelindex].level) {
+        this.characterList[characterIndex].characterClasses[classLevelindex].hitDiceUsed = this.characterList[characterIndex].characterClasses[classLevelindex].level;
       }
 
-      if (this.characterList[characterIndex].classLevelList[classLevelindex].usedHitDice < 0) {
-        this.characterList[characterIndex].classLevelList[classLevelindex].usedHitDice = 0;
+      if (this.characterList[characterIndex].characterClasses[classLevelindex].hitDiceUsed < 0) {
+        this.characterList[characterIndex].characterClasses[classLevelindex].hitDiceUsed = 0;
       }
 
       this.setUpdateTimer(characterIndex);
     },
-    adjustDamage(index: number, damage: number, campaign: Campaign) {
+    adjustDamage(index: number, damage: number) {
+      //sutract from tempt hit points first
       if (this.characterList[index].temporaryHitPoints > 0 && damage > 0) {
         this.characterList[index].temporaryHitPoints -= damage;
 
+        //if damage exceeds temp hit points, set temp to 0 and damage to amount that exceeded temp, otherwise no further action is needed
         if (this.characterList[index].temporaryHitPoints < 0) {
           damage = this.characterList[index].temporaryHitPoints * -1;
           this.characterList[index].temporaryHitPoints = 0;
@@ -228,10 +184,9 @@ export const useCharacterStore = defineStore({
       }
 
       this.characterList[index].damage += damage;
-      const maxHitPoints = this.getMaxHitPoints(index, campaign);
 
-      if (this.characterList[index].damage > maxHitPoints) {
-        this.characterList[index].damage = maxHitPoints;
+      if (this.characterList[index].damage > this.characterList[index].hitPointMaximum) {
+        this.characterList[index].damage = this.characterList[index].hitPointMaximum;
       }
 
       if (this.characterList[index].damage < 0) {
@@ -250,19 +205,19 @@ export const useCharacterStore = defineStore({
       this.setUpdateTimer(index);
     },
     adjustAc(index: number, amount: number) {
-      this.characterList[index].ac += amount;
+      this.characterList[index].baseArmorClass += amount;
 
-      if (this.characterList[index].ac < 1) {
-        this.characterList[index].ac = 1;
+      if (this.characterList[index].baseArmorClass < 1) {
+        this.characterList[index].baseArmorClass = 1;
       }
 
       this.setUpdateTimer(index);
     },
     adjustAcBonus(index: number, amount: number) {
-      this.characterList[index].acBonus += amount;
+      this.characterList[index].armorClassBonus += amount;
 
-      if (this.characterList[index].acBonus < 0) {
-        this.characterList[index].acBonus = 0;
+      if (this.characterList[index].armorClassBonus < 0) {
+        this.characterList[index].armorClassBonus = 0;
       }
 
       this.setUpdateTimer(index);
@@ -298,534 +253,431 @@ export const useCharacterStore = defineStore({
 
       this.setUpdateTimer(index);
     },
-    adjustStress(index: number, amount: number, campaign: Campaign) {
-      if (!campaign.madness) {
-        return;
+    adjustStress(index: number, amount: number) {
+      if (this.characterList[index].stress !== null) {
+        var preAdjustmentLevel = this.characterList[index].stress!.stressLevel;
+        this.characterList[index].stress!.stressLevel += amount;
+
+        if (this.characterList[index].stress.stressLevel < 0) {
+          this.characterList[index].stress.stressLevel = 0;
+        }
+
+        if (this.characterList[index].stress.stressLevel > this.characterList[index].stress.stressMaximum) {
+          this.characterList[index].stress.stressLevel = this.characterList[index].stress.stressMaximum;
+        }
+
+        //only update if the amount used actually changed
+        if (preAdjustmentLevel != this.characterList[index].stress.stressLevel) {
+          this.setStressUpdateTimer(index);
+        }
       }
-
-      this.characterList[index].stress += amount;
-
-      const stressMaximum = this.getStressMaximum(index, campaign)
-
-      if (this.characterList[index].stress < 0) {
-        this.characterList[index].stress = 0;
-      }
-
-      if (this.characterList[index].stress > stressMaximum) {
-        this.characterList[index].stress = stressMaximum;
-      }
-
-      this.setUpdateTimer(index);
     },
-    adjustMeditationDice(index: number, amount: number, campaign: Campaign) {
-      if (!campaign.madness) {
-        return;
+    adjustMeditationDice(index: number, amount: number) {
+      if (this.characterList[index].stress !== null) {
+        var preAdjustmentAmountUsed = this.characterList[index].stress.meditationDiceUsed;
+        this.characterList[index].stress.meditationDiceUsed += amount;
+
+        if (this.characterList[index].stress.meditationDiceUsed < 0) {
+          this.characterList[index].stress.meditationDiceUsed = 0;
+        }
+
+        if (this.characterList[index].stress.meditationDiceUsed > 10) {
+          this.characterList[index].stress.meditationDiceUsed = 10;
+        }
+
+        //only update if the amount used actually changed
+        if (preAdjustmentAmountUsed != this.characterList[index].stress.meditationDiceUsed) {
+          this.setStressUpdateTimer(index);
+        }        
       }
-
-      this.characterList[index].meditationDiceUsed += amount;
-
-      if (this.characterList[index].meditationDiceUsed < 0) {
-        this.characterList[index].meditationDiceUsed = 0;
-      }
-
-      if (this.characterList[index].meditationDiceUsed > 10) {
-        this.characterList[index].meditationDiceUsed = 10;
-      }
-
-      this.setUpdateTimer(index);
     },
-    getStressThreshold(index: number, campaign: Campaign) {
-      if (!campaign.madness) {
-        return 0;
+    applyAfflictionOrVirtue(index: number, roll: number) {
+      if (this.characterList[index].stress !== null) {
+        if (roll === 0)
+        {
+          this.characterList[index].stress.stressStatus = null;
+        }
+        else {
+          this.characterList[index].stress.stressStatus = this.masterData.stressStatuses!.find(x => x.minRoll <= roll && x.maxRoll >= roll) as StressStatus;
+        }
+
+        this.setStressUpdateTimer(index);
       }
-
-      const resModifier = Math.floor((this.characterList[index].resolve!.score - 10) / 2.0);
-
-      return 100 + 5 * resModifier;
-    },
-    applyAfflictionOrVirtue(index: number, roll: number, campaign: Campaign) {
-      if (!campaign.madness) {
-        return;
-      }
-
-      this.characterList[index].stressStatus = this.masterData.stressStatuses.find(x => x.minRoll <= roll && x.maxRoll >= roll) as StressStatus;
-
-      this.setUpdateTimer(index);
     },
     adjustFirstSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.firstLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.firstLevel < 0) {
+          this.characterList[index].usedSpellSlots.firstLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.firstLevel > this.characterList[index].spellSlots.firstLevel) {
+          this.characterList[index].usedSpellSlots.firstLevel = this.characterList[index].spellSlots.firstLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].firstSlotsUsed += amount;
-
-      if (this.characterList[index].firstSlotsUsed < 0) {
-        this.characterList[index].firstSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].firstSlotsUsed > this.characterList[index].spellSlots!.first) {
-        this.characterList[index].firstSlotsUsed = this.characterList[index].spellSlots!.first;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustSecondSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.secondLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.secondLevel < 0) {
+          this.characterList[index].usedSpellSlots.secondLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.secondLevel > this.characterList[index].spellSlots.secondLevel) {
+          this.characterList[index].usedSpellSlots.secondLevel = this.characterList[index].spellSlots.secondLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].secondSlotsUsed += amount;
-
-      if (this.characterList[index].secondSlotsUsed < 0) {
-        this.characterList[index].secondSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].secondSlotsUsed > this.characterList[index].spellSlots!.second) {
-        this.characterList[index].secondSlotsUsed = this.characterList[index].spellSlots!.second;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustThirdSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.thirdLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.thirdLevel < 0) {
+          this.characterList[index].usedSpellSlots.thirdLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.thirdLevel > this.characterList[index].spellSlots.thirdLevel) {
+          this.characterList[index].usedSpellSlots.thirdLevel = this.characterList[index].spellSlots.thirdLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].thirdSlotsUsed += amount;
-
-      if (this.characterList[index].thirdSlotsUsed < 0) {
-        this.characterList[index].thirdSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].thirdSlotsUsed > this.characterList[index].spellSlots!.third) {
-        this.characterList[index].thirdSlotsUsed = this.characterList[index].spellSlots!.third;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustFourthSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.fourthLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.fourthLevel < 0) {
+          this.characterList[index].usedSpellSlots.fourthLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.fourthLevel > this.characterList[index].spellSlots.fourthLevel) {
+          this.characterList[index].usedSpellSlots.fourthLevel = this.characterList[index].spellSlots.fourthLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].fourthSlotsUsed += amount;
-
-      if (this.characterList[index].fourthSlotsUsed < 0) {
-        this.characterList[index].fourthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].fourthSlotsUsed > this.characterList[index].spellSlots!.fourth) {
-        this.characterList[index].fourthSlotsUsed = this.characterList[index].spellSlots!.fourth;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustFifthSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.fifthLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.fifthLevel < 0) {
+          this.characterList[index].usedSpellSlots.fifthLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.fifthLevel > this.characterList[index].spellSlots.fifthLevel) {
+          this.characterList[index].usedSpellSlots.fifthLevel = this.characterList[index].spellSlots.fifthLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].fifthSlotsUsed += amount;
-
-      if (this.characterList[index].fifthSlotsUsed < 0) {
-        this.characterList[index].fifthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].fifthSlotsUsed > this.characterList[index].spellSlots!.fifth) {
-        this.characterList[index].fifthSlotsUsed = this.characterList[index].spellSlots!.fifth;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustSixthSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.sixthLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.sixthLevel < 0) {
+          this.characterList[index].usedSpellSlots.sixthLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.sixthLevel > this.characterList[index].spellSlots.sixthLevel) {
+          this.characterList[index].usedSpellSlots.sixthLevel = this.characterList[index].spellSlots.sixthLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].sixthSlotsUsed += amount;
-
-      if (this.characterList[index].sixthSlotsUsed < 0) {
-        this.characterList[index].sixthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].sixthSlotsUsed > this.characterList[index].spellSlots!.sixth) {
-        this.characterList[index].sixthSlotsUsed = this.characterList[index].spellSlots!.sixth;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustSeventhSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.seventhLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.seventhLevel < 0) {
+          this.characterList[index].usedSpellSlots.seventhLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.seventhLevel > this.characterList[index].spellSlots.seventhLevel) {
+          this.characterList[index].usedSpellSlots.seventhLevel = this.characterList[index].spellSlots.seventhLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].seventhSlotsUsed += amount;
-
-      if (this.characterList[index].seventhSlotsUsed < 0) {
-        this.characterList[index].seventhSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].seventhSlotsUsed > this.characterList[index].spellSlots!.seventh) {
-        this.characterList[index].seventhSlotsUsed = this.characterList[index].spellSlots!.seventh;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustEighthSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.eighthLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.eighthLevel < 0) {
+          this.characterList[index].usedSpellSlots.eighthLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.eighthLevel > this.characterList[index].spellSlots.eighthLevel) {
+          this.characterList[index].usedSpellSlots.eighthLevel = this.characterList[index].spellSlots.eighthLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].eighthSlotsUsed += amount;
-
-      if (this.characterList[index].eighthSlotsUsed < 0) {
-        this.characterList[index].eighthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].eighthSlotsUsed > this.characterList[index].spellSlots!.eighth) {
-        this.characterList[index].eighthSlotsUsed = this.characterList[index].spellSlots!.eighth;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustNinthSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
+        this.characterList[index].usedSpellSlots.ninthLevel += amount;
+
+        if (this.characterList[index].usedSpellSlots.ninthLevel < 0) {
+          this.characterList[index].usedSpellSlots.ninthLevel = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.ninthLevel > this.characterList[index].spellSlots.ninthLevel) {
+          this.characterList[index].usedSpellSlots.ninthLevel = this.characterList[index].spellSlots.ninthLevel;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].ninthSlotsUsed += amount;
-
-      if (this.characterList[index].ninthSlotsUsed < 0) {
-        this.characterList[index].ninthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].ninthSlotsUsed > this.characterList[index].spellSlots!.ninth) {
-        this.characterList[index].ninthSlotsUsed = this.characterList[index].spellSlots!.ninth;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustWarlockSlotsUsed(index: number, amount: number) {
-      if (this.characterList[index].spellSlots === null) {
-        return;
+      if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].warlockSpellSlots !== null) {
+        this.characterList[index].usedSpellSlots.warlock += amount;
+
+        if (this.characterList[index].usedSpellSlots.warlock < 0) {
+          this.characterList[index].usedSpellSlots.warlock = 0;
+        }
+
+        if (this.characterList[index].usedSpellSlots.warlock > this.characterList[index].warlockSpellSlots.slots) {
+          this.characterList[index].usedSpellSlots.warlock = this.characterList[index].warlockSpellSlots.slots;
+        }
+
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].warlockSlotsUsed += amount;
-
-      if (this.characterList[index].warlockSlotsUsed < 0) {
-        this.characterList[index].warlockSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].warlockSlotsUsed > this.characterList[index].warlockSpellSlots!.quantity) {
-        this.characterList[index].warlockSlotsUsed = this.characterList[index].warlockSpellSlots!.quantity;
-      }
-
-      this.setUpdateTimer(index);
-    },
-    getStressMaximum(index: number, campaign: Campaign) {
-      return this.getStressThreshold(index, campaign) * 2;
     },
     getTotalLevels(index: number) {
       let totalLevels = 0;
-      this.characterList[index].classLevelList.forEach((classLevel) => {
-        totalLevels += classLevel.levels;
+      this.characterList[index].characterClasses.forEach((classLevel) => {
+        totalLevels += classLevel.level;
       });
 
       return totalLevels;
     },
     getProficiencyBonus(index: number) {
-      const totalLevels = this.getTotalLevels(index);
-      let bonus = 0;
-      this.masterData.proficiencyBonuses.forEach((profBonus) => {
-        if (profBonus.level === totalLevels) {
-          bonus = profBonus.bonus;
-        }
-      });
-
-      return bonus;
+      return this.characterList[index].proficiencyBonus;
     },
     isJackOfAllTrades(index: number) {
-      let jackOfAllTrades = false;
+      //only calculate if the character is a jack of all trades once
+      if (this.characterList[index].isJackOfAllTrades === null) {        
+        this.characterList[index].isJackOfAllTrades = this.characterList[index].characterClasses.some(x => x.subclass.jackOfAllTrades)
+      }
 
-      this.characterList[index].classLevelList.forEach((classLevel) => {
-        if (classLevel.characterClass.name === "Bard" && classLevel.levels > 1) {
-          jackOfAllTrades = true;
-        }
-      });
-
-      return jackOfAllTrades;
+      return this.characterList[index].isJackOfAllTrades;
     },
     isBeastmaster(index: number) {
-      let beastmaster = false;
-
-      this.characterList[index].classLevelList.forEach((classLevel) => {
-        if (classLevel.beastMaster) {
-          beastmaster = true;
-        }
-      });
-
-      return beastmaster;
+      return this.characterList[index].characterClasses.some(x => x.primalCompanion !== null);
     },
-    longRest(index: number, campaign: Campaign) {
-      this.characterList[index].damage = 0;
-      this.characterList[index].temporaryHitPoints = 0;
-
-      let totalHitDiceToRestore = Math.floor(this.getTotalLevels(index) / 2);
-
-      if (totalHitDiceToRestore < 1) {
-        totalHitDiceToRestore = 1;
-      }
-
-      let classesToRestoreHitDie = [] as ClassLevel[];
-
-      this.characterList[index].classLevelList.forEach((classLevel) => {
-        if (classLevel.usedHitDice > 0) {
-          classesToRestoreHitDie.push(classLevel);
-        }
-      });
-
-      //sort class list by largest hit die to smallest
-      classesToRestoreHitDie = classesToRestoreHitDie.sort((a, b) => b.characterClass.hitDie - a.characterClass.hitDie);
-
-      classesToRestoreHitDie.forEach((classLevel) => {
-        if (totalHitDiceToRestore > 0) {
-          if (totalHitDiceToRestore <= classLevel.usedHitDice) {
-            this.adjustHitDie(index, this.characterList[index].classLevelList.indexOf(classLevel), totalHitDiceToRestore * -1);
-            totalHitDiceToRestore = 0;
-          } else {
-            const classHitDiceToRestore = classLevel.usedHitDice;
-            this.adjustHitDie(index, this.characterList[index].classLevelList.indexOf(classLevel), classHitDiceToRestore * -1);
-            totalHitDiceToRestore -= classHitDiceToRestore;
-          }
-        }
-      });
-
-      if (this.characterList[index].primalCompanion != null) {
-        this.characterList[index].primalCompanion!.damage = 0;
-
-        let compantionHitDiceToRestore = Math.floor(this.getBeastmasterLevel(index) / 2);
-
-        if (compantionHitDiceToRestore < 0) {
-          compantionHitDiceToRestore = 1;
-        }
-
-        this.characterList[index].primalCompanion!.hitDiceUsed -= compantionHitDiceToRestore;
-        this.characterList[index].primalCompanion!.temporaryHitPoints = 0;
-      }
-
-      if (this.characterList[index].spellSlots != null) {
-        this.characterList[index].firstSlotsUsed = 0;
-        this.characterList[index].secondSlotsUsed = 0;
-        this.characterList[index].thirdSlotsUsed = 0;
-        this.characterList[index].fourthSlotsUsed = 0;
-        this.characterList[index].fifthSlotsUsed = 0;
-        this.characterList[index].sixthSlotsUsed = 0;
-        this.characterList[index].seventhSlotsUsed = 0;
-        this.characterList[index].eighthSlotsUsed = 0;
-        this.characterList[index].ninthSlotsUsed = 0;
-      }
-
-      if (this.characterList[index].warlockSpellSlots != null) {
-        this.characterList[index].warlockSlotsUsed = 0;
-      }
-
-      const stressThreshold = this.getStressThreshold(index, campaign);
-      
-      if (this.characterList[index].stress <= stressThreshold) {
-        this.adjustStress(index, -50, campaign);
-      } else {
-        this.characterList[index].stress = stressThreshold;
-      }
-
-      this.characterList[index].stressStatus = this.masterData.stressStatuses.find(x => x.id === 1) as StressStatus;
-      this.adjustMeditationDice(index, -5, campaign);
+    getPrimalCompanion(index: number) {
+      return this.characterList[index].characterClasses.find(x => x.primalCompanion !== null)!.primalCompanion as PrimalCompanion;
+    },
+    setPrimalCompanion(index: number, primalCompanion: PrimalCompanion) {
+      this.characterList[index].characterClasses.map(x => x.primalCompanion === null ? null : primalCompanion);
+    },
+    async longRest(index: number) {
+      await agent.playerCharacter.longRest(this.characterList[index].playerCharacterId)
+        .then((data) => {
+          this.characterList[index] = data!;
+        });
     },
     levelUp(characterIndex: number, classLevelIndex: number) {
-      this.characterList[characterIndex].classLevelList[classLevelIndex].levels++;
+      this.characterList[characterIndex].characterClasses[classLevelIndex].level++;
     },
     getCompanionSenses(index: number) {
-      const passivePerception = 10 + Math.floor((this.characterList[index].primalCompanion!.primalCompanionType.wisdom - 10) / 2) + this.getProficiencyBonus(index);
-      return this.characterList[index].primalCompanion!.senses.replace("<perception>", passivePerception.toString());
+      var primalCompanion = this.getPrimalCompanion(index);
+      const passivePerception = 10 + Math.floor((primalCompanion.wisdomOverride ?? primalCompanion.primalCompanionType.wisdom - 10) / 2) + this.getProficiencyBonus(index);
+      return `Darkvision 60 ft., Passive Perception ${passivePerception}`;
     },
     getBeastmasterLevel(index: number) {
-      const beastmaster = this.characterList[index].classLevelList.find(x => x.beastMaster);
+        return this.characterList[index].characterClasses.find(x => x.primalCompanion !== null)?.level ?? 0;
+    },
+    changePrimalCompanionType(index: number, newTypeId: number) {
+      let primalCompanion = this.getPrimalCompanion(index);
+      primalCompanion.primalCompanionType = this.masterData.primalCompanionTypes.find(x => x.id == newTypeId) as PrimalCompanionType;
 
-      if (beastmaster != undefined) {
-        return beastmaster.levels;
-      }
-
-      return 0;
+      this.setPrimalCompanion(index, primalCompanion);
     },
     adjustCompanionHitDie(index: number, amount: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
-      }
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+        primalCompanion.hitDiceUsed += amount;
 
-      this.characterList[index].primalCompanion!.hitDiceUsed += amount;
+        if (primalCompanion!.hitDiceUsed < 0) {
+          primalCompanion!.hitDiceUsed = 0;
+        }
+        
+        let beastmasterLevel = this.getBeastmasterLevel(index);
 
-      if (this.characterList[index].primalCompanion!.hitDiceUsed < 0) {
-        this.characterList[index].primalCompanion!.hitDiceUsed = 0;
-      }
+        if (primalCompanion!.hitDiceUsed > beastmasterLevel) {
+          primalCompanion!.hitDiceUsed = beastmasterLevel;
+        }
 
-      if (this.characterList[index].primalCompanion!.hitDiceUsed > this.getBeastmasterLevel(index)) {
-        this.characterList[index].primalCompanion!.hitDiceUsed = this.getBeastmasterLevel(index);
-      }
-
-      this.setUpdateTimer(index);
+        //save updates back to character
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
+      }      
     },
     getCompanionMaxHitPoints(index: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return 0;
-      }
-
-      const baseHitPoints = this.characterList[index].primalCompanion!.primalCompanionType.baseHitPoints;
-
-      return baseHitPoints * (this.getBeastmasterLevel(index) + 1) - this.characterList[index].primalCompanion!.maxHpReduction;
+      return this.isBeastmaster(index) ? this.getPrimalCompanion(index).hitPointMaximum : 0;
     },
     adjustCompanionDamage(index: number, damage: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
-      }
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
 
-      if (this.characterList[index].primalCompanion!.temporaryHitPoints > 0 && damage > 0) {
-        this.characterList[index].primalCompanion!.temporaryHitPoints -= damage;
-
-        if (this.characterList[index].primalCompanion!.temporaryHitPoints < 0) {
-          damage = this.characterList[index].primalCompanion!.temporaryHitPoints * -1;
-          this.characterList[index].primalCompanion!.temporaryHitPoints = 0;
-        } else {
-          return;
+        if (primalCompanion.temporaryHitPoints > 0 && damage > 0) {
+          primalCompanion.temporaryHitPoints -= damage;
+  
+          if (primalCompanion.temporaryHitPoints < 0) {
+            damage = primalCompanion.temporaryHitPoints * -1;
+            primalCompanion.temporaryHitPoints = 0;
+          } else {
+            return;
+          }
         }
+  
+        primalCompanion.damage += damage;
+        const maxHitPoints = this.getCompanionMaxHitPoints(index);
+  
+        if (primalCompanion.damage > maxHitPoints) {
+          primalCompanion.damage = maxHitPoints;
+        }
+  
+        if (primalCompanion.damage < 0) {
+          primalCompanion.damage = 0;
+        }
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].primalCompanion!.damage += damage;
-      const maxHitPoints = this.getCompanionMaxHitPoints(index);
-
-      if (this.characterList[index].primalCompanion!.damage > maxHitPoints) {
-        this.characterList[index].primalCompanion!.damage = maxHitPoints;
-      }
-
-      if (this.characterList[index].primalCompanion!.damage < 0) {
-        this.characterList[index].primalCompanion!.damage = 0;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustCompanionTemporaryHitPoints(index: number, amount: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        primalCompanion.temporaryHitPoints += amount;
+  
+        if (primalCompanion.temporaryHitPoints < 0) {
+          primalCompanion.temporaryHitPoints = 0;
+        }
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].primalCompanion!.temporaryHitPoints += amount;
-
-      if (this.characterList[index].primalCompanion!.temporaryHitPoints < 0) {
-        this.characterList[index].primalCompanion!.temporaryHitPoints = 0;
-      }
-
-      this.setUpdateTimer(index);
     },
     getCompanionBaseAc(index: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return 0;
-      }
-
-      return this.characterList[index].primalCompanion!.baseArmorClass + this.getProficiencyBonus(index);
+      let primalCompanion = this.getPrimalCompanion(index);
+      
+      //primal companions all have base 13 + proficiency AC
+      return 13 + primalCompanion.armorClassBonus + this.getProficiencyBonus(index);
     },
     adjustCompanionAcBonus(index: number, amount: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        primalCompanion.armorClassBonus += amount;
+
+        if (primalCompanion.armorClassBonus < 0) {
+          primalCompanion.armorClassBonus = 0;
+        }
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].primalCompanion!.acBonus += amount;
-
-      if (this.characterList[index].primalCompanion!.acBonus < 0) {
-        this.characterList[index].primalCompanion!.acBonus = 0;
-      }
-
-      this.setUpdateTimer(index);
     },
     resetCompanionDeathSaves(index: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
-      }
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
 
-      this.characterList[index].primalCompanion!.deathSaveFailures = 0;
-      this.characterList[index].primalCompanion!.deathSaveSuccesses = 0;
-      this.setUpdateTimer(index);
+        primalCompanion.deathSaveFailures = 0;
+        primalCompanion.deathSaveSuccesses = 0;
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
+      }
     },
     adjustCompanionDeathSaveSuccesses(index: number, amount: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        primalCompanion.deathSaveSuccesses += amount;
+
+        if (primalCompanion.deathSaveSuccesses < 0) {
+          primalCompanion.deathSaveSuccesses = 0;
+        }
+
+        if (primalCompanion.deathSaveSuccesses > 3) {
+          primalCompanion.deathSaveSuccesses = 3;
+        }
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].primalCompanion!.deathSaveSuccesses += amount;
-
-      if (this.characterList[index].primalCompanion!.deathSaveSuccesses < 0) {
-        this.characterList[index].primalCompanion!.deathSaveSuccesses = 0;
-      }
-
-      if (this.characterList[index].primalCompanion!.deathSaveSuccesses > 3) {
-        this.characterList[index].primalCompanion!.deathSaveSuccesses = 3;
-      }
-
-      this.setUpdateTimer(index);
     },
     adjustCompanionDeathSaveFailures(index: number, amount: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        primalCompanion.deathSaveFailures += amount;
+
+        if (primalCompanion.deathSaveFailures < 0) {
+          primalCompanion.deathSaveFailures = 0;
+        }
+
+        if (primalCompanion.deathSaveFailures > 3) {
+          primalCompanion.deathSaveFailures = 3;
+        }
+
+        this.setPrimalCompanion(index, primalCompanion);
+  
+        this.setUpdateTimer(index);
       }
-
-      this.characterList[index].primalCompanion!.deathSaveFailures += amount;
-
-      if (this.characterList[index].primalCompanion!.deathSaveFailures < 0) {
-        this.characterList[index].primalCompanion!.deathSaveFailures = 0;
-      }
-
-      if (this.characterList[index].primalCompanion!.deathSaveFailures > 3) {
-        this.characterList[index].primalCompanion!.deathSaveFailures = 3;
-      }
-
-      this.setUpdateTimer(index);
     },
     getCompanionAbilityDescription(index: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return "";
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor((this.characterList[index].wisdom.score - 10) / 2);
+
+        return primalCompanion.primalCompanionType.abilityDescription.replace("<wisSpellSave>", wisSpellSave.toString());
       }
 
-      const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
-
-      return this.characterList[index].primalCompanion!.primalCompanionType.abilityDescription.replace("<wisSpellSave>", wisSpellSave.toString());
+      return "";
     },
     getCompanionActionDescription(index: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return "";
+      if (this.isBeastmaster(index)) {
+        let primalCompanion = this.getPrimalCompanion(index);
+
+        const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
+        const toHitBonus = this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
+        const strDamage = Math.floor(( primalCompanion.primalCompanionType.strength - 10) / 2) + this.getProficiencyBonus(index);
+        const dexDamage = Math.floor(( primalCompanion.primalCompanionType.dexterity - 10) / 2) + this.getProficiencyBonus(index);
+
+        return primalCompanion.primalCompanionType.actionDescription
+          .replace("<toHitBonus>", toHitBonus.toString())
+          .replace("<wisSpellSave>", wisSpellSave.toString())
+          .replace("<strDamage>", strDamage.toString())
+          .replace("<dexDamage>", dexDamage.toString());
       }
 
-      const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
-      const toHitBonus = this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
-      const strDamage = Math.floor(( this.characterList[index].primalCompanion!.primalCompanionType.strength - 10) / 2) + this.getProficiencyBonus(index);
-      const dexDamage = Math.floor(( this.characterList[index].primalCompanion!.primalCompanionType.dexterity - 10) / 2) + this.getProficiencyBonus(index);
-
-      let baseDesc = this.characterList[index].primalCompanion!.primalCompanionType.actionDescription;
-
-      baseDesc = baseDesc.replace("<toHitBonus>", toHitBonus.toString());
-      baseDesc = baseDesc.replace("<wisSpellSave>", wisSpellSave.toString());
-      baseDesc = baseDesc.replace("<strDamage>", strDamage.toString());
-      baseDesc = baseDesc.replace("<dexDamage>", dexDamage.toString());
-
-      return baseDesc;
-    },
-    setCompanionType(index: number, typeId: number) {
-      if (this.characterList[index].primalCompanion === null) {
-        return;
-      }
-
-      this.characterList[index].primalCompanion!.primalCompanionType = this.masterData.primalCompanionTypes.find(x => x.id === typeId) as PrimalCompanionType;
+      return "";
     },
     async cancelEdits(index: number) {
-      await agent.playerCharacter.getCharacter(this.characterList[index].id).then((data) => {
-        this.characterList[index] = data;
-        this.setSpellSlots(this.characterList[index]);
+      await agent.playerCharacter.getCharacter(this.characterList[index].playerCharacterId).then((data) => {
+        this.characterList[index] = data!;
       });
     },
     setUpdateTimer(characterIndex: number) {
@@ -834,8 +686,20 @@ export const useCharacterStore = defineStore({
         this.saveCharacter(characterIndex);
       }, updateDelay)
     },
+    setBaseUpdateTimer(characterIndex: number) {
+      clearTimeout(baseUpdateTimer);
+      baseUpdateTimer = setTimeout(() => {
+        this.saveCharacterBase(characterIndex);
+      }, updateDelay)
+    },
+    setStressUpdateTimer(characterIndex: number) {
+      clearTimeout(stressUpdateTimer);
+      stressUpdateTimer = setTimeout(() => {
+        this.saveStress(characterIndex);
+      }, updateDelay)
+    },
     async killCharacter(index: number) {
-      await agent.playerCharacter.killCharacter(this.characterList[index].id);
+      await agent.playerCharacter.killCharacter(this.characterList[index].playerCharacterId);
     },
     async reviveCharacter(id: number) {
       await agent.playerCharacter.reviveCharacter(id);
