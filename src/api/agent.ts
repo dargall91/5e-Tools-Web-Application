@@ -27,10 +27,10 @@ const user = {
 
 const campaign = {
   getCampaignList() {
-    return requests.get<Campaign[]>('campaign/list');
+    return requests.get<Campaign[]>('campaign/all');
   },
   getActiveCampaign() {
-    return requests.get<Campaign>('campaign/getActive');
+    return requests.get<Campaign>('campaign/active');
   }
 }
 
