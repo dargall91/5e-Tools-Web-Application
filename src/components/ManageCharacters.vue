@@ -1383,7 +1383,7 @@
       async onCampaignChanged(id: number) {
         this.setSelectedCampaign(id);
         if (id != 0) {
-          await this.getCharacterList(this.userStore.user.value?.id as number, this.campaignStore.activeCampaign.value.campaignId);
+          await this.getCharacterList(this.userStore.user.value?.userId as number, this.campaignStore.activeCampaign.value.campaignId);
         } else {
           this.clearCharacterList();
         }
@@ -1510,7 +1510,7 @@
       async closeKillCharacterAndSave() {
         this.killCharacter = false;
         await this.characterStoreFunctions.killCharacter(this.indexToModify);
-        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
+        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId);
         this.indexToModify = -1;
       },
       showReviveCharacter() {
@@ -1526,7 +1526,7 @@
       },
       async closeReviveCharacterAndRevive() {
         await this.characterStoreFunctions.reviveCharacter(this.idToRevive);
-        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
+        await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId);
         this.reviveCharacter = false;
         this.idToRevive = 0;
       }
@@ -1538,7 +1538,7 @@
       }
       
       await this.characterStoreFunctions.getMasterData(this.campaignStore.selectedCampaign.value.campaignId);
-      await this.getCharacterList(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.campaignId);
+      await this.getCharacterList(this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId);
     }
   });
 </script>
