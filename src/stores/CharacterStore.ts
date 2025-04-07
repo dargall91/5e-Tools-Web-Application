@@ -49,10 +49,10 @@ export const useCharacterStore = defineStore({
     async saveStress(index: number) {
       if (this.characterList[index].stress !== null)
       {
-        await agent.playerCharacter.updateStress(this.characterList[index].playerCharacterId, this.characterList[index].stress)
+        await agent.playerCharacter.updateStress(this.characterList[index].playerCharacterId, this.characterList[index].stress!)
           .then((data) => {
             //stress status is not transferred, preseve value
-            var stressStatus = this.characterList[index].stress!.stressStatus;
+            const stressStatus = this.characterList[index].stress!.stressStatus;
             this.characterList[index].stress = data!;
             this.characterList[index].stress!.stressStatus = stressStatus;
           });
@@ -153,7 +153,7 @@ export const useCharacterStore = defineStore({
     },
     setResolve(score: number, index: number) {
       if (this.characterList[index].resolve !== null) {
-        this.characterList[index].resolve.score = score;
+        this.characterList[index].resolve!.score = score;
       }
     },
     adjustHitDie(characterIndex: number, classLevelindex: number, amount: number) {
@@ -255,38 +255,38 @@ export const useCharacterStore = defineStore({
     },
     adjustStress(index: number, amount: number) {
       if (this.characterList[index].stress !== null) {
-        var preAdjustmentLevel = this.characterList[index].stress!.stressLevel;
+        const preAdjustmentLevel = this.characterList[index].stress!.stressLevel;
         this.characterList[index].stress!.stressLevel += amount;
 
-        if (this.characterList[index].stress.stressLevel < 0) {
-          this.characterList[index].stress.stressLevel = 0;
+        if (this.characterList[index].stress!.stressLevel < 0) {
+          this.characterList[index].stress!.stressLevel = 0;
         }
 
-        if (this.characterList[index].stress.stressLevel > this.characterList[index].stress.stressMaximum) {
-          this.characterList[index].stress.stressLevel = this.characterList[index].stress.stressMaximum;
+        if (this.characterList[index].stress!.stressLevel > this.characterList[index].stress!.stressMaximum) {
+          this.characterList[index].stress!.stressLevel = this.characterList[index].stress!.stressMaximum;
         }
 
         //only update if the amount used actually changed
-        if (preAdjustmentLevel != this.characterList[index].stress.stressLevel) {
+        if (preAdjustmentLevel != this.characterList[index].stress!.stressLevel) {
           this.setStressUpdateTimer(index);
         }
       }
     },
     adjustMeditationDice(index: number, amount: number) {
       if (this.characterList[index].stress !== null) {
-        var preAdjustmentAmountUsed = this.characterList[index].stress.meditationDiceUsed;
-        this.characterList[index].stress.meditationDiceUsed += amount;
+        const preAdjustmentAmountUsed = this.characterList[index].stress!.meditationDiceUsed;
+        this.characterList[index].stress!.meditationDiceUsed += amount;
 
-        if (this.characterList[index].stress.meditationDiceUsed < 0) {
-          this.characterList[index].stress.meditationDiceUsed = 0;
+        if (this.characterList[index].stress!.meditationDiceUsed < 0) {
+          this.characterList[index].stress!.meditationDiceUsed = 0;
         }
 
-        if (this.characterList[index].stress.meditationDiceUsed > 10) {
-          this.characterList[index].stress.meditationDiceUsed = 10;
+        if (this.characterList[index].stress!.meditationDiceUsed > 10) {
+          this.characterList[index].stress!.meditationDiceUsed = 10;
         }
 
         //only update if the amount used actually changed
-        if (preAdjustmentAmountUsed != this.characterList[index].stress.meditationDiceUsed) {
+        if (preAdjustmentAmountUsed != this.characterList[index].stress!.meditationDiceUsed) {
           this.setStressUpdateTimer(index);
         }        
       }
@@ -295,10 +295,10 @@ export const useCharacterStore = defineStore({
       if (this.characterList[index].stress !== null) {
         if (roll === 0)
         {
-          this.characterList[index].stress.stressStatus = null;
+          this.characterList[index].stress!.stressStatus = null;
         }
         else {
-          this.characterList[index].stress.stressStatus = this.masterData.stressStatuses!.find(x => x.minRoll <= roll && x.maxRoll >= roll) as StressStatus;
+          this.characterList[index].stress!.stressStatus = this.masterData.stressStatuses!.find(x => x.minRoll <= roll && x.maxRoll >= roll) as StressStatus;
         }
 
         this.setStressUpdateTimer(index);
@@ -306,14 +306,14 @@ export const useCharacterStore = defineStore({
     },
     adjustFirstSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.firstLevel += amount;
+        this.characterList[index].usedSpellSlots!.firstLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.firstLevel < 0) {
-          this.characterList[index].usedSpellSlots.firstLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.firstLevel < 0) {
+          this.characterList[index].usedSpellSlots!.firstLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.firstLevel > this.characterList[index].spellSlots.firstLevel) {
-          this.characterList[index].usedSpellSlots.firstLevel = this.characterList[index].spellSlots.firstLevel;
+        if (this.characterList[index].usedSpellSlots!.firstLevel > this.characterList[index].spellSlots!.firstLevel) {
+          this.characterList[index].usedSpellSlots!.firstLevel = this.characterList[index].spellSlots!.firstLevel;
         }
 
         this.setUpdateTimer(index);
@@ -321,14 +321,14 @@ export const useCharacterStore = defineStore({
     },
     adjustSecondSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.secondLevel += amount;
+        this.characterList[index].usedSpellSlots!.secondLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.secondLevel < 0) {
-          this.characterList[index].usedSpellSlots.secondLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.secondLevel < 0) {
+          this.characterList[index].usedSpellSlots!.secondLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.secondLevel > this.characterList[index].spellSlots.secondLevel) {
-          this.characterList[index].usedSpellSlots.secondLevel = this.characterList[index].spellSlots.secondLevel;
+        if (this.characterList[index].usedSpellSlots!.secondLevel > this.characterList[index].spellSlots!.secondLevel) {
+          this.characterList[index].usedSpellSlots!.secondLevel = this.characterList[index].spellSlots!.secondLevel;
         }
 
         this.setUpdateTimer(index);
@@ -336,14 +336,14 @@ export const useCharacterStore = defineStore({
     },
     adjustThirdSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.thirdLevel += amount;
+        this.characterList[index].usedSpellSlots!.thirdLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.thirdLevel < 0) {
-          this.characterList[index].usedSpellSlots.thirdLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.thirdLevel < 0) {
+          this.characterList[index].usedSpellSlots!.thirdLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.thirdLevel > this.characterList[index].spellSlots.thirdLevel) {
-          this.characterList[index].usedSpellSlots.thirdLevel = this.characterList[index].spellSlots.thirdLevel;
+        if (this.characterList[index].usedSpellSlots!.thirdLevel > this.characterList[index].spellSlots!.thirdLevel) {
+          this.characterList[index].usedSpellSlots!.thirdLevel = this.characterList[index].spellSlots!.thirdLevel;
         }
 
         this.setUpdateTimer(index);
@@ -351,14 +351,14 @@ export const useCharacterStore = defineStore({
     },
     adjustFourthSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.fourthLevel += amount;
+        this.characterList[index].usedSpellSlots!.fourthLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.fourthLevel < 0) {
-          this.characterList[index].usedSpellSlots.fourthLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.fourthLevel < 0) {
+          this.characterList[index].usedSpellSlots!.fourthLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.fourthLevel > this.characterList[index].spellSlots.fourthLevel) {
-          this.characterList[index].usedSpellSlots.fourthLevel = this.characterList[index].spellSlots.fourthLevel;
+        if (this.characterList[index].usedSpellSlots!.fourthLevel > this.characterList[index].spellSlots!.fourthLevel) {
+          this.characterList[index].usedSpellSlots!.fourthLevel = this.characterList[index].spellSlots!.fourthLevel;
         }
 
         this.setUpdateTimer(index);
@@ -366,14 +366,14 @@ export const useCharacterStore = defineStore({
     },
     adjustFifthSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.fifthLevel += amount;
+        this.characterList[index].usedSpellSlots!.fifthLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.fifthLevel < 0) {
-          this.characterList[index].usedSpellSlots.fifthLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.fifthLevel < 0) {
+          this.characterList[index].usedSpellSlots!.fifthLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.fifthLevel > this.characterList[index].spellSlots.fifthLevel) {
-          this.characterList[index].usedSpellSlots.fifthLevel = this.characterList[index].spellSlots.fifthLevel;
+        if (this.characterList[index].usedSpellSlots!.fifthLevel > this.characterList[index].spellSlots!.fifthLevel) {
+          this.characterList[index].usedSpellSlots!.fifthLevel = this.characterList[index].spellSlots!.fifthLevel;
         }
 
         this.setUpdateTimer(index);
@@ -381,14 +381,14 @@ export const useCharacterStore = defineStore({
     },
     adjustSixthSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.sixthLevel += amount;
+        this.characterList[index].usedSpellSlots!.sixthLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.sixthLevel < 0) {
-          this.characterList[index].usedSpellSlots.sixthLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.sixthLevel < 0) {
+          this.characterList[index].usedSpellSlots!.sixthLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.sixthLevel > this.characterList[index].spellSlots.sixthLevel) {
-          this.characterList[index].usedSpellSlots.sixthLevel = this.characterList[index].spellSlots.sixthLevel;
+        if (this.characterList[index].usedSpellSlots!.sixthLevel > this.characterList[index].spellSlots!.sixthLevel) {
+          this.characterList[index].usedSpellSlots!.sixthLevel = this.characterList[index].spellSlots!.sixthLevel;
         }
 
         this.setUpdateTimer(index);
@@ -396,14 +396,14 @@ export const useCharacterStore = defineStore({
     },
     adjustSeventhSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.seventhLevel += amount;
+        this.characterList[index].usedSpellSlots!.seventhLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.seventhLevel < 0) {
-          this.characterList[index].usedSpellSlots.seventhLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.seventhLevel < 0) {
+          this.characterList[index].usedSpellSlots!.seventhLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.seventhLevel > this.characterList[index].spellSlots.seventhLevel) {
-          this.characterList[index].usedSpellSlots.seventhLevel = this.characterList[index].spellSlots.seventhLevel;
+        if (this.characterList[index].usedSpellSlots!.seventhLevel > this.characterList[index].spellSlots!.seventhLevel) {
+          this.characterList[index].usedSpellSlots!.seventhLevel = this.characterList[index].spellSlots!.seventhLevel;
         }
 
         this.setUpdateTimer(index);
@@ -411,14 +411,14 @@ export const useCharacterStore = defineStore({
     },
     adjustEighthSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.eighthLevel += amount;
+        this.characterList[index].usedSpellSlots!.eighthLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.eighthLevel < 0) {
-          this.characterList[index].usedSpellSlots.eighthLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.eighthLevel < 0) {
+          this.characterList[index].usedSpellSlots!.eighthLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.eighthLevel > this.characterList[index].spellSlots.eighthLevel) {
-          this.characterList[index].usedSpellSlots.eighthLevel = this.characterList[index].spellSlots.eighthLevel;
+        if (this.characterList[index].usedSpellSlots!.eighthLevel > this.characterList[index].spellSlots!.eighthLevel) {
+          this.characterList[index].usedSpellSlots!.eighthLevel = this.characterList[index].spellSlots!.eighthLevel;
         }
 
         this.setUpdateTimer(index);
@@ -426,14 +426,14 @@ export const useCharacterStore = defineStore({
     },
     adjustNinthSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].spellSlots !== null) {
-        this.characterList[index].usedSpellSlots.ninthLevel += amount;
+        this.characterList[index].usedSpellSlots!.ninthLevel += amount;
 
-        if (this.characterList[index].usedSpellSlots.ninthLevel < 0) {
-          this.characterList[index].usedSpellSlots.ninthLevel = 0;
+        if (this.characterList[index].usedSpellSlots!.ninthLevel < 0) {
+          this.characterList[index].usedSpellSlots!.ninthLevel = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.ninthLevel > this.characterList[index].spellSlots.ninthLevel) {
-          this.characterList[index].usedSpellSlots.ninthLevel = this.characterList[index].spellSlots.ninthLevel;
+        if (this.characterList[index].usedSpellSlots!.ninthLevel > this.characterList[index].spellSlots!.ninthLevel) {
+          this.characterList[index].usedSpellSlots!.ninthLevel = this.characterList[index].spellSlots!.ninthLevel;
         }
 
         this.setUpdateTimer(index);
@@ -441,14 +441,14 @@ export const useCharacterStore = defineStore({
     },
     adjustWarlockSlotsUsed(index: number, amount: number) {
       if (this.characterList[index].usedSpellSlots !== null && this.characterList[index].warlockSpellSlots !== null) {
-        this.characterList[index].usedSpellSlots.warlock += amount;
+        this.characterList[index].usedSpellSlots!.warlock += amount;
 
-        if (this.characterList[index].usedSpellSlots.warlock < 0) {
-          this.characterList[index].usedSpellSlots.warlock = 0;
+        if (this.characterList[index].usedSpellSlots!.warlock < 0) {
+          this.characterList[index].usedSpellSlots!.warlock = 0;
         }
 
-        if (this.characterList[index].usedSpellSlots.warlock > this.characterList[index].warlockSpellSlots.slots) {
-          this.characterList[index].usedSpellSlots.warlock = this.characterList[index].warlockSpellSlots.slots;
+        if (this.characterList[index].usedSpellSlots!.warlock > this.characterList[index].warlockSpellSlots!.slots) {
+          this.characterList[index].usedSpellSlots!.warlock = this.characterList[index].warlockSpellSlots!.slots;
         }
 
         this.setUpdateTimer(index);
@@ -492,7 +492,7 @@ export const useCharacterStore = defineStore({
       this.characterList[characterIndex].characterClasses[classLevelIndex].level++;
     },
     getCompanionSenses(index: number) {
-      var primalCompanion = this.getPrimalCompanion(index);
+      const primalCompanion = this.getPrimalCompanion(index);
       const passivePerception = 10 + Math.floor((primalCompanion.wisdomOverride ?? primalCompanion.primalCompanionType.wisdom - 10) / 2) + this.getProficiencyBonus(index);
       return `Darkvision 60 ft., Passive Perception ${passivePerception}`;
     },
@@ -500,21 +500,21 @@ export const useCharacterStore = defineStore({
         return this.characterList[index].characterClasses.find(x => x.primalCompanion !== null)?.level ?? 0;
     },
     changePrimalCompanionType(index: number, newTypeId: number) {
-      let primalCompanion = this.getPrimalCompanion(index);
+      const primalCompanion = this.getPrimalCompanion(index);
       primalCompanion.primalCompanionType = this.masterData.primalCompanionTypes.find(x => x.id == newTypeId) as PrimalCompanionType;
 
       this.setPrimalCompanion(index, primalCompanion);
     },
     adjustCompanionHitDie(index: number, amount: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
         primalCompanion.hitDiceUsed += amount;
 
         if (primalCompanion!.hitDiceUsed < 0) {
           primalCompanion!.hitDiceUsed = 0;
         }
         
-        let beastmasterLevel = this.getBeastmasterLevel(index);
+        const beastmasterLevel = this.getBeastmasterLevel(index);
 
         if (primalCompanion!.hitDiceUsed > beastmasterLevel) {
           primalCompanion!.hitDiceUsed = beastmasterLevel;
@@ -531,7 +531,7 @@ export const useCharacterStore = defineStore({
     },
     adjustCompanionDamage(index: number, damage: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         if (primalCompanion.temporaryHitPoints > 0 && damage > 0) {
           primalCompanion.temporaryHitPoints -= damage;
@@ -562,7 +562,7 @@ export const useCharacterStore = defineStore({
     },
     adjustCompanionTemporaryHitPoints(index: number, amount: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         primalCompanion.temporaryHitPoints += amount;
   
@@ -576,14 +576,14 @@ export const useCharacterStore = defineStore({
       }
     },
     getCompanionBaseAc(index: number) {
-      let primalCompanion = this.getPrimalCompanion(index);
+      const primalCompanion = this.getPrimalCompanion(index);
       
       //primal companions all have base 13 + proficiency AC
       return 13 + primalCompanion.armorClassBonus + this.getProficiencyBonus(index);
     },
     adjustCompanionAcBonus(index: number, amount: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         primalCompanion.armorClassBonus += amount;
 
@@ -598,7 +598,7 @@ export const useCharacterStore = defineStore({
     },
     resetCompanionDeathSaves(index: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         primalCompanion.deathSaveFailures = 0;
         primalCompanion.deathSaveSuccesses = 0;
@@ -610,7 +610,7 @@ export const useCharacterStore = defineStore({
     },
     adjustCompanionDeathSaveSuccesses(index: number, amount: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         primalCompanion.deathSaveSuccesses += amount;
 
@@ -629,7 +629,7 @@ export const useCharacterStore = defineStore({
     },
     adjustCompanionDeathSaveFailures(index: number, amount: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         primalCompanion.deathSaveFailures += amount;
 
@@ -648,7 +648,7 @@ export const useCharacterStore = defineStore({
     },
     getCompanionAbilityDescription(index: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor((this.characterList[index].wisdom.score - 10) / 2);
 
@@ -659,7 +659,7 @@ export const useCharacterStore = defineStore({
     },
     getCompanionActionDescription(index: number) {
       if (this.isBeastmaster(index)) {
-        let primalCompanion = this.getPrimalCompanion(index);
+        const primalCompanion = this.getPrimalCompanion(index);
 
         const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
         const toHitBonus = this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
