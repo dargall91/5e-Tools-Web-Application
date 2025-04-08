@@ -463,7 +463,7 @@ export const useCharacterStore = defineStore({
       return totalLevels;
     },
     getProficiencyBonus(index: number) {
-      return this.characterList[index].proficiencyBonus;
+      return this.characterList[index].proficiencyBonus.bonus;
     },
     isJackOfAllTrades(index: number) {
       //only calculate if the character is a jack of all trades once
