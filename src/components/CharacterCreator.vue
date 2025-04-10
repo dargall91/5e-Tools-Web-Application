@@ -2,15 +2,15 @@
   <h2 class="mt-2">Character Creator</h2>
   
   <div :key="key">
-    <CForm @submit.prevent="submit">
+    <CForm @submit.prevent="submit" v-if="mounted">
       <!-- Campiagn Selector -->
       <CRow>
         <CCol xs="3" md="2" class="mt-1">
           <CFormLabel for="campaign" class="fw-bold align-text-bottom">Campaign:</CFormLabel>
         </CCol>
         <CCol xs="9" md="6">
-          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.activeCampaign.value.id.toString()">
-            <option v-for="(item) in campaignStore.campaignList.value" :value="item.id" :key="item.id">{{ item.name }}</option>
+          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.selectedCampaign.value.campaignId.toString()">
+            <option v-for="(item) in campaignStore.campaignList.value" :value="item.campaignId" :key="item.campaignId">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
       </CRow>
@@ -41,8 +41,13 @@
           <CFormLabel for="baseclass" class="fw-bold">Base Class:</CFormLabel>
         </CCol>
         <CCol class="mt-1" xs="8" md="4" lg="3">
-          <CFormSelect @change="setBaseClass(0, parseInt($event.target.value))" id="baseclass">
-            <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+          <CFormSelect @change="setBaseClass(parseInt($event.target.value))" id="baseclass" :modelValue="campaignStore.selectedCampaign.value.classes[0].id.toString()">
+            <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+          </CFormSelect>
+        </CCol>
+        <CCol class="mt-1" xs="8" md="4" lg="3">
+          <CFormSelect @change="setBaseSubclass(parseInt($event.target.value))" id="subClass">
+            <option v-for="(item) in subclassList(playerCharacter.characterClasses[0].subclass.id)" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
         <CCol xs="3" md="1" class="mt-2">
@@ -56,14 +61,19 @@
       </CRow>
 
       <!-- multiclass -->
-      <template v-for="(multiclass, index) in multiClassList" :id="index.toString()" :key="index">
-        <CRow v-if="campaignStore.selectedCampaign.value.allowsMulticlassing" class="mt-1">
+      <template v-if="!campaignStore.selectedCampaign.value.allowsMulticlassing" >
+        <CRow v-for="(multiclass, index) in multiClassList" :id="index.toString()" :key="index" class="mt-1">
           <CCol xs="4" md="2" class="mt-2">
             <CFormLabel :for="'multiClass' + index" class="fw-bold">Multiclass:</CFormLabel>
           </CCol>
           <CCol class="mt-1" xs="8" md="4" lg="3">
-            <CFormSelect @change="setMultiClass(multiclass, 0, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.subclass.id.toString()">
-              <option v-for="(item) in characterStore.masterData.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+            <CFormSelect @change="setMulticlassClass(multiclass, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.subclass.id.toString()">
+              <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
+            </CFormSelect>
+          </CCol>
+          <CCol class="mt-1" xs="8" md="4" lg="3">
+            <CFormSelect @change="setMulticlassSubclass(multiclass, parseInt($event.target.value))" :id="'multiClass' + index" :key="index" :modelValue="multiclass.subclass.id.toString()">
+              <option v-for="(item) in subclassList(multiclass.subclass.id)" :value="item.id" :key="item.id">{{ item.name }}</option>
             </CFormSelect>
           </CCol>
           <CCol xs="3" md="1" class="mt-2">
@@ -79,7 +89,7 @@
           </CCol>
         </CRow>
 
-        <CButton v-if="multiClassList.length < characterStore.masterData.value.classes.length - 1" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
+        <CButton v-if="multiClassList.length < campaignStore.selectedCampaign.value.classes.length - 1" color="dark" type="button" @click="addMulticlass" class="mt-1 btn btn-primary">Add Mulitclass</CButton>
       </template>
 
       <CFormCheck class="mt-2" :id="'tough'" label="Tough Feat" v-model="playerCharacter.toughFeat" value="true" />
@@ -87,7 +97,7 @@
       <!-- Ability Scores -->
       <CRow>
         <!-- Strength -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.strength">
           <CCard class="mt-1">
             <CCardHeader>Strength (STR)</CCardHeader>
             <CCardBody>
@@ -96,7 +106,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setStrength(parseInt($event.target.value))" :modelValue="playerCharacter.strength?.score.toString()">
+                  <CFormSelect @change="setStrength(parseInt($event.target.value))" :modelValue="playerCharacter.strength.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -126,7 +136,7 @@
         </CCol>
 
         <!-- Dexterity -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.dexterity">
           <CCard class="mt-1">
             <CCardHeader>Dexterity (DEX)</CCardHeader>
             <CCardBody>
@@ -135,7 +145,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setDexterity(parseInt($event.target.value))" :modelValue="playerCharacter.dexterity?.score.toString()">
+                  <CFormSelect @change="setDexterity(parseInt($event.target.value))" :modelValue="playerCharacter.dexterity.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -185,7 +195,7 @@
         </CCol>
 
         <!-- Constitution -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.constitution">
           <CCard class="mt-1">
             <CCardHeader>Constitution (CON)</CCardHeader>
             <CCardBody>
@@ -194,7 +204,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setConstitution(parseInt($event.target.value))" :modelValue="playerCharacter.constitution?.score.toString()">
+                  <CFormSelect @change="setConstitution(parseInt($event.target.value))" :modelValue="playerCharacter.constitution.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -214,7 +224,7 @@
         </CCol>
 
         <!-- Intelligence  -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.intelligence">
         <CCard class="mt-1">
         <CCardHeader>Intelligence (INT)</CCardHeader>
         <CCardBody>
@@ -223,7 +233,7 @@
               <CFormLabel class="fw-bold">Score:</CFormLabel>
             </CCol>
             <CCol sm="auto">
-              <CFormSelect @change="setIntelligence(parseInt($event.target.value))" :modelValue="playerCharacter.intelligence?.score.toString()">
+              <CFormSelect @change="setIntelligence(parseInt($event.target.value))" :modelValue="playerCharacter.intelligence.score.toString()">
                 <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
               </CFormSelect>
             </CCol>
@@ -293,7 +303,7 @@
         </CCol>
 
         <!-- Wisdom -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.wisdom">
           <CCard class="mt-1">
               <CCardHeader>Wisdom (WIS)</CCardHeader>
             <CCardBody>
@@ -302,7 +312,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setWisdom(parseInt($event.target.value))" :modelValue="playerCharacter.wisdom?.score.toString()">
+                  <CFormSelect @change="setWisdom(parseInt($event.target.value))" :modelValue="playerCharacter.wisdom.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -372,7 +382,7 @@
         </CCol>
 
         <!-- Charisma -->
-        <CCol xs="6" sm="4">
+        <CCol xs="6" sm="4" v-if="playerCharacter.charisma">
           <CCard class="mt-1">
             <CCardHeader>Charisma (CHA)</CCardHeader>
             <CCardBody>
@@ -381,7 +391,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setCharisma(parseInt($event.target.value))" :modelValue="playerCharacter.charisma?.score.toString()">
+                  <CFormSelect @change="setCharisma(parseInt($event.target.value))" :modelValue="playerCharacter.charisma.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -441,7 +451,7 @@
         </CCol>
 
         <!-- Resolve -->
-        <CCol xs="6" sm="4" v-if="campaignStore.activeCampaign.value.madness">
+        <CCol xs="6" sm="4" v-if="playerCharacter.resolve">
           <CCard class="mt-1">
             <CCardHeader>Resolve (RES)</CCardHeader>
             <CCardBody>
@@ -450,7 +460,7 @@
                   <CFormLabel class="fw-bold">Score:</CFormLabel>
                 </CCol>
                 <CCol sm="auto">
-                  <CFormSelect @change="setResolve(parseInt($event.target.value))" :modelValue="playerCharacter.resolve?.score.toString()">
+                  <CFormSelect @change="setResolve(parseInt($event.target.value))" :modelValue="playerCharacter.resolve!.score.toString()">
                     <option v-for="score in numberList" :value="score" :key="score">{{ score }}</option>
                   </CFormSelect>
                 </CCol>
@@ -497,7 +507,7 @@
   import { useCampaignStore } from '@/stores/CampaignStore'
   import { useCharacterStore } from '@/stores/CharacterStore'
   import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormCheck, CFormInput, CFormLabel, CFormSelect, CRow, CToast, CToastBody, CToaster, CToastHeader } from '@coreui/vue'
-  import { CharacterClass, PlayerCharacter, Subclass } from '@/models/PlayerCharacter'
+  import { CharacterClass, PlayerCharacter, ProficiencyBonus } from '@/models/PlayerCharacter'
   import agent from '@/api/agent'
   
   export default defineComponent({
@@ -515,7 +525,6 @@
         getCampaignList: useCampaignStore().getCampaignList,
         setSelectedCampaign: useCampaignStore().setSelectedCampaign,
         getActiveCampaign: useCampaignStore().getActiveCampaign,
-        getMasterData: useCharacterStore().getMasterData,
         numberList: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                     11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
         savingThrowLevels: [
@@ -531,30 +540,40 @@
         playerCharacter: { } as PlayerCharacter,
         errorToasts: [] as any,
         successToasts: [] as any,
-        key: 0
+        key: 0,
+        mounted: false
       }
     },
     methods: {
-      setCampaign(id: number) {
+      async setCampaign(id: number) {
         if (id === 0) {
           return;
         }
 
+        var defaultClass = this.campaignStore.selectedCampaign.value.classes[0].id;
         this.setSelectedCampaign(id);
+        this.setBaseClass(defaultClass);
+        this.multiClassList.forEach(x => this.setMulticlassClass(x, defaultClass));
       },
-      setBaseClass(classId: number, subclassId: number) {
+      subclassList(subclassId: number) {
+        return this.campaignStore.selectedCampaign.value.classes.find(c => c.subclasses.some(s => s.id === subclassId))!.subclasses
+      },
+      setBaseClass(classId: number) {
         this.playerCharacter.characterClasses[0].subclass
-          = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
+          = this.campaignStore.selectedCampaign.value.classes.find(x => x.id === classId)!.subclasses[0];
+      },
+      setBaseSubclass(subclassId: number) {
+        this.playerCharacter.characterClasses[0].subclass = this.subclassList(subclassId).find(x => x.id === subclassId)!;
       },
       setBaseLevel(level: number) {
         this.playerCharacter.characterClasses[0].level = level;
       },
       addMulticlass() {
-        if (this.multiClassList.length < this.characterStore.masterData.value.classes.length - 1) {
+        if (this.multiClassList.length < this.campaignStore.selectedCampaign.value.classes.length - 1) {
           let newClassLevel = {
               baseClass: false,
               level: 1,
-              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+              subclass: this.campaignStore.selectedCampaign.value.classes[0].subclasses[0]
             } as CharacterClass;
           this.multiClassList.push(newClassLevel);
         }
@@ -562,8 +581,11 @@
       removeMulticlass(index: number) {
         this.multiClassList.splice(index, 1);
       },
-      setMultiClass(multiclass: CharacterClass, classId: number, subclassId: number) {
-        multiclass.subclass = this.characterStore.masterData.value.classes.find(x => x.id === classId)!.subclasses.find(x => x.id === subclassId) as Subclass;
+      setMulticlassClass(multiclass: CharacterClass, classId: number) {
+        multiclass.subclass = this.campaignStore.selectedCampaign.value.classes.find(x => x.id === classId)!.subclasses[0];
+      },
+      setMulticlassSubclass(multiclass: CharacterClass, subclassId: number) {
+        multiclass.subclass = this.subclassList(subclassId).find(x => x.id === subclassId)!;
       },
       setStrength(score: number) {
         this.playerCharacter.strength.score = score;
@@ -662,6 +684,7 @@
       },
       initPlayerCharacter() {
         this.playerCharacter = {
+          playerCharacterId: 0,
           name: "",
           baseArmorClass: 10,
           armorClassBonus: 0,
@@ -669,6 +692,7 @@
           deathSaveSuccesses: 0,
           deathSaveFailures: 0,
           stress: null,
+          proficiencyBonus: { level: 1, bonus: 1 } as ProficiencyBonus,
           strength: { 
             score: 10,
             proficient: false,
@@ -711,11 +735,12 @@
             performance: 0,
             persuasion: 0
           },
+          resolve: this.campaignStore.selectedCampaign.value.usesStress ? { score: 10 } : null,
           characterClasses: [
-            { 
+            {
               baseClass: true,
               level: 1,
-              subclass: this.characterStore.masterData.value.classes[0].subclasses[0]
+              subclass: this.campaignStore.selectedCampaign.value.classes[0].subclasses[0]
             } as CharacterClass
           ] as CharacterClass[]
         } as PlayerCharacter;
@@ -724,7 +749,7 @@
         let error = false;
 
         //campiagn validator
-        if (this.campaignStore.selectedCampaign.value.id === 0) {
+        if (this.campaignStore.selectedCampaign.value.campaignId === 0) {
           error = true;
           this.errorToasts.push(
             { title: "Submission Error:", body: "No campaign selected"}
@@ -791,11 +816,11 @@
             { title: "Submission Error:", body: "Total class levels cannot exceed 20"}
           );
         }
-
+        
         if (!error) {
           this.playerCharacter.characterClasses.push(...this.multiClassList);
 
-          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter, this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id).then(() => {
+          await agent.playerCharacter.addPlayerCharacter(this.playerCharacter, this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId).then(() => {
             this.successToasts.push(
               { title: "Success!", body: `${this.playerCharacter.name} created`}
             );
@@ -803,17 +828,16 @@
             this.initPlayerCharacter();
             this.multiClassList = [];
           });
-
-          useCharacterStore().getCharacterLists(this.userStore.user.value.id, this.campaignStore.selectedCampaign.value.id);
+          
+          useCharacterStore().getCharacterLists(this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId);
         }
       }
     },
-    mounted() {
-      this.getCampaignList();
-      this.getActiveCampaign();
+    async mounted() {
+      await this.getCampaignList();
+      await this.getActiveCampaign();
       this.initPlayerCharacter();
-      this.getMasterData(this.campaignStore.selectedCampaign.value.id);
-      this.setCampaign(this.campaignStore.selectedCampaign.value.id);
+      this.mounted = true;
     } 
   });
 </script>

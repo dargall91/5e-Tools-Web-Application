@@ -1,8 +1,7 @@
 export interface PlayerCharacterMasterData {
 	stressStatuses: StressStatus[],
 	exhaustionLevels: ExhaustionLevel[],
-	primalCompanionTypes: PrimalCompanionType[],
-	classes: Class[]
+	primalCompanionTypes: PrimalCompanionType[]
 };
 
 export interface PlayerCharacter {
@@ -17,10 +16,8 @@ export interface PlayerCharacter {
 	deathSaveFailures: number,
 	deathSaveSuccesses: number,
 	toughFeat: boolean,
-	exhaustionLevel: number,
-	spellcasterLevel: number,
-	warlockLevel: number,
-	proficiencyBonus: number,
+	exhaustionLevel: ExhaustionLevel | null,
+	proficiencyBonus: ProficiencyBonus,
 	strength: Strength,
 	dexterity: Dexterity,
 	constitution: Constitution,
@@ -29,10 +26,10 @@ export interface PlayerCharacter {
 	charisma: Charisma,
 	resolve: Resolve | null,
 	stress: Stress | null,
-	usedSpellSlots: UsedSpellSlots | null,
-	characterClasses: CharacterClass[],
 	spellSlots: SpellSlots | null
 	warlockSpellSlots: WarlockSpellSlots | null,
+	usedSpellSlots: UsedSpellSlots | null,
+	characterClasses: CharacterClass[],
 	isJackOfAllTrades: boolean | null
 };
 
@@ -98,6 +95,7 @@ export interface CharacterClass {
 export interface Subclass {
 	id: number,
 	name: string,
+	className: string,
 	classHitDieSize: number,
 	jackOfAllTrades: boolean
 };

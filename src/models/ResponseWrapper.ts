@@ -1,6 +1,6 @@
 export interface ResponseWrapper<T> {
-  data: T | null;
-  messages: Message[] | null;
+  data: T;
+  messages: Message[];
 }
 
 export interface Message {

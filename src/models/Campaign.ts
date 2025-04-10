@@ -1,7 +1,10 @@
+import { Class } from "./PlayerCharacter";
+
 export interface Campaign {
-	id: number;
+	campaignId: number;
 	name: string;
-	madness: boolean;
-	inflatedHitPoints: number;
+	usesStress: boolean;
+	usesInflatedHitPoints: number;
 	allowsMulticlassing: boolean;
+	classes: Class[];
 };

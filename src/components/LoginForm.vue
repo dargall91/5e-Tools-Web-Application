@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <div v-if="user.user.value.id === 0" id="loginForm">
+    <div v-if="user.user.value.userId === 0" id="loginForm">
       <h2 class="mt-2">Login</h2>
 
       <CButtonGroup role="group">
