@@ -255,6 +255,22 @@ export const useCharacterStore = defineStore({
         this.setBaseUpdateTimer(index);
       }
     },
+    getExhaustionLevel(index: number) {
+      return this.characterList[index].exhaustionLevel?.id ?? 0;
+    },
+    getExhaustionDescription(index: number) {
+      return this.characterList[index].exhaustionLevel?.description ?? "";
+    },
+    adjustExhaustionLevel(index: number, amount: number) {
+      const exhaustionLevel = this.getExhaustionLevel(index);
+      //do not adjust level if it would go below 0 or above 6
+      if ((exhaustionLevel < 6 && amount > 0) || (exhaustionLevel > 0 && amount < 0)) {
+        this.characterList[index].exhaustionLevel = this.masterData.exhaustionLevels.find(x => x.id === exhaustionLevel + amount) ?? null;
+        console.log(this.characterList[index].exhaustionLevel );
+  
+        this.setUpdateTimer(index);
+      }
+    },
     adjustStress(index: number, amount: number) {
       if (this.characterList[index].stress !== null) {
         const preAdjustmentLevel = this.characterList[index].stress!.stressLevel;

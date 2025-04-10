@@ -113,6 +113,16 @@
           </CCol>
         </CRow>
 
+        <!-- Exhaustion -->
+        <CRow>
+          <CCol class="mt-1">
+            <strong>Exhaustion Level: </strong> {{ characterStoreFunctions.getExhaustionLevel(characterIndex) }}
+            <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, -1)">-1</CButton>
+            <CButton size="sm" color="success" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, 1)">+1</CButton>
+            {{ characterStoreFunctions.getExhaustionDescription(characterIndex) }}
+          </CCol>
+        </CRow>
+
         <!-- Stress -->
         <CRow v-if="character.stress">
           <CCol class="mt-1" xs="12" sm="7" md="5" lg="4" xl="3">
