@@ -2,7 +2,7 @@
   <h2 class="mt-2">Character Creator</h2>
   
   <div :key="key">
-    <CForm @submit.prevent="submit" v-if="campaignStore.selectedCampaign.value.classes">
+    <CForm @submit.prevent="submit" v-if="mounted">
       <!-- Campiagn Selector -->
       <CRow>
         <CCol xs="3" md="2" class="mt-1">
@@ -525,7 +525,6 @@
         getCampaignList: useCampaignStore().getCampaignList,
         setSelectedCampaign: useCampaignStore().setSelectedCampaign,
         getActiveCampaign: useCampaignStore().getActiveCampaign,
-        getMasterData: useCharacterStore().getMasterData,
         numberList: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
                     11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
         savingThrowLevels: [
@@ -541,7 +540,8 @@
         playerCharacter: { } as PlayerCharacter,
         errorToasts: [] as any,
         successToasts: [] as any,
-        key: 0
+        key: 0,
+        mounted: false
       }
     },
     methods: {
@@ -837,7 +837,7 @@
       await this.getCampaignList();
       await this.getActiveCampaign();
       this.initPlayerCharacter();
-      await this.getMasterData(this.campaignStore.selectedCampaign.value.campaignId);
+      this.mounted = true;
     } 
   });
 </script>

@@ -2,7 +2,7 @@
   <h2 class="mt-2">Manage Characters</h2>
   
   <CRow>
-    <CCol xs="3" md="2" class="mt-2">
+    <CCol xs="3" md="2" class="mt-1">
       <CFormLabel for="campaign" class="fw-bold align-text-bottom">Campaign:</CFormLabel>
     </CCol>
     <CCol xs="9" sm="8" md="6">
