@@ -193,7 +193,7 @@ export const useCharacterStore = defineStore({
         this.characterList[index].damage = 0;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustTemporyHitPoints(index: number, amount: number) {
       this.characterList[index].temporaryHitPoints += amount;
@@ -202,7 +202,7 @@ export const useCharacterStore = defineStore({
         this.characterList[index].temporaryHitPoints = 0;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustAc(index: number, amount: number) {
       this.characterList[index].baseArmorClass += amount;
@@ -211,7 +211,7 @@ export const useCharacterStore = defineStore({
         this.characterList[index].baseArmorClass = 1;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustAcBonus(index: number, amount: number) {
       this.characterList[index].armorClassBonus += amount;
@@ -220,12 +220,12 @@ export const useCharacterStore = defineStore({
         this.characterList[index].armorClassBonus = 0;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     resetDeathSaves(index: number) {
       this.characterList[index].deathSaveFailures = 0;
       this.characterList[index].deathSaveSuccesses = 0;
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustDeathSaveSuccesses(index: number, amount: number) {
       this.characterList[index].deathSaveSuccesses += amount;
@@ -238,7 +238,7 @@ export const useCharacterStore = defineStore({
         this.characterList[index].deathSaveSuccesses = 3;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustDeathSaveFailures(index: number, amount: number) {
       this.characterList[index].deathSaveFailures += amount;
@@ -251,7 +251,7 @@ export const useCharacterStore = defineStore({
         this.characterList[index].deathSaveFailures = 3;
       }
 
-      this.setUpdateTimer(index);
+      this.setBaseUpdateTimer(index);
     },
     adjustStress(index: number, amount: number) {
       if (this.characterList[index].stress !== null) {
@@ -474,7 +474,7 @@ export const useCharacterStore = defineStore({
       return this.characterList[index].isJackOfAllTrades;
     },
     isBeastmaster(index: number) {
-      return this.characterList[index].characterClasses.some(x => x.primalCompanion !== null);
+      return this.characterList[index].characterClasses.some(x => x.primalCompanion !== null && x.level > 3);
     },
     getPrimalCompanion(index: number) {
       return this.characterList[index].characterClasses.find(x => x.primalCompanion !== null)!.primalCompanion as PrimalCompanion;
@@ -681,22 +681,38 @@ export const useCharacterStore = defineStore({
       });
     },
     setUpdateTimer(characterIndex: number) {
+      //if base update timer is running, clear it. base props will be updated by this instead
+      if (baseUpdateTimer !== 0) {
+        clearTimeout(baseUpdateTimer);
+        baseUpdateTimer = 0;
+      }
+
       clearTimeout(updateTimer);
+
       updateTimer = setTimeout(() => {
         this.saveCharacter(characterIndex);
-      }, updateDelay)
+        updateTimer = 0;
+      }, updateDelay);
     },
     setBaseUpdateTimer(characterIndex: number) {
-      clearTimeout(baseUpdateTimer);
-      baseUpdateTimer = setTimeout(() => {
-        this.saveCharacterBase(characterIndex);
-      }, updateDelay)
+      //if non-base changes are staged use that timer instead since it can handle these changes as well
+      if (updateTimer !== 0) {
+        this.setUpdateTimer(characterIndex);
+      } else {
+        clearTimeout(baseUpdateTimer);
+
+        baseUpdateTimer = setTimeout(() => {
+          this.saveCharacterBase(characterIndex);
+          baseUpdateTimer = 0;
+        }, updateDelay);
+      }     
     },
     setStressUpdateTimer(characterIndex: number) {
       clearTimeout(stressUpdateTimer);
+      
       stressUpdateTimer = setTimeout(() => {
         this.saveStress(characterIndex);
-      }, updateDelay)
+      }, updateDelay);
     },
     async killCharacter(index: number) {
       await agent.playerCharacter.killCharacter(this.characterList[index].playerCharacterId);
