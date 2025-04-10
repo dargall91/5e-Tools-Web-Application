@@ -27,10 +27,10 @@
         <!-- Class Info -->
         <CRow class="mt-1" v-for="classLevel, classLevelIndex in character.characterClasses" :key="classLevelIndex">
           <CCol xs="6" md="4" lg="3" v-if="classLevel.baseClass">
-            <strong>Base Class:</strong> {{ classLevel.subclass.name }}
+            <strong>Base Class:</strong> {{ classLevel.subclass.name }} {{ classLevel.subclass.className }}
           </CCol>
           <CCol xs="6" md="5" lg="3" v-else>
-            <strong>Multiclass:</strong> {{ classLevel.subclass.name }}
+            <strong>Multiclass:</strong> {{ classLevel.subclass.name }} {{ classLevel.subclass.className }}
           </CCol>
           <CCol xs="3" lg="2">
             <strong>Level:</strong> {{ classLevel.level }}
@@ -47,7 +47,7 @@
           <CCol xs="12" sm="7" md="5" lg="4" xl="3">
             <CRow>
               <CCol>
-                <strong>Hit Points:</strong> {{ character.hitPointMaximum - character.damage }} / {{ character.hitPointMaximum }}
+                <strong>Hit Points:</strong> {{ characterStoreFunctions.getHitPointMaximum(characterIndex) - character.damage }} / {{ characterStoreFunctions.getHitPointMaximum(characterIndex) }}
               </CCol>
             </CRow>
             <CRow>
@@ -97,7 +97,7 @@
 
         <!-- Death Saves -->
         <CRow>
-          <CCol  class="mt-1" md="12" lg="4" xl="3">
+          <CCol class="mt-1" md="12" lg="4" xl="3">
             <strong>Death Saving Throws: </strong>
             <CButton size="sm" color="dark" @click="characterStoreFunctions.resetDeathSaves(characterIndex)">Reset</CButton>
           </CCol>
@@ -114,11 +114,11 @@
         </CRow>
 
         <!-- Stress -->
-        <CRow v-if="character.stress !== null">
+        <CRow v-if="character.stress">
           <CCol class="mt-1" xs="12" sm="7" md="5" lg="4" xl="3">
             <CRow>
               <CCol>
-                <strong>Stress:</strong> {{ character.stress?.stressLevel }} / {{ character.stress?.stressThreshold }}
+                <strong>Stress:</strong> {{ character.stress.stressLevel }} / {{ character.stress.stressThreshold }}
               </CCol>
             </CRow>
             <CRow>
@@ -132,7 +132,7 @@
               </CCol>
             </CRow>
           </CCol>
-          <CCol class="mt-1" xs="12" sm="5" md="3"  v-if="character.stress.stressLevel >= character.stress.stressMaximum && character.stress.stressStatus === null">
+          <CCol class="mt-1" xs="12" sm="5" md="3"  v-if="character.stress.stressLevel >= character.stress.stressThreshold && !character.stress.stressStatus">
             <CRow>
               <CCol>
                 <CFormLabel for="stressRoll" class="fw-bold">d100 Roll:</CFormLabel>
@@ -163,7 +163,7 @@
         </CRow>
         
         <!-- Affliction/Virtue -->
-        <CCard class="mt-1" v-if="character.stress?.stressStatus !== null">
+        <CCard class="mt-1" v-if="character.stress?.stressStatus">
           <CCardHeader>
             <strong>{{ character.stress!.stressStatus.type }}</strong>: {{ character.stress?.stressStatus.name }}
             <CButton size="sm" color="dark" @click="characterStoreFunctions.applyAfflictionOrVirtue(characterIndex, 0)">Clear</CButton>
@@ -337,7 +337,7 @@
                       </CRow>
                       <CRow>
                         <CCol class="mt-1">
-                          <strong>Passive Perception: </strong> {{ getPassiveTotal(character.wisdom.score, character.wisdom.survival, 
+                          <strong>Passive Perception: </strong> {{ getPassiveTotal(character.wisdom.score, character.wisdom.perception, 
                                   characterStoreFunctions.getProficiencyBonus(characterIndex), characterStoreFunctions.isJackOfAllTrades(characterIndex)) }}
                         </CCol>
                       </CRow>
@@ -403,11 +403,11 @@
           </CAccordionItem>
 
           <!-- Spell Slots -->
-          <CAccordionItem v-if="character.usedSpellSlots !== null">
+          <CAccordionItem v-if="character.usedSpellSlots">
             <CAccordionHeader>Spell Slots</CAccordionHeader>
             <CAccordionBody>
               <CRow>
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.firstLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.firstLevel > 0">
                   <CCard>
                     <CCardHeader>1st-Level</CCardHeader>
                     <CCardBody>
@@ -426,7 +426,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.secondLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.secondLevel > 0">
                   <CCard>
                     <CCardHeader>2nd-Level</CCardHeader>
                     <CCardBody>
@@ -445,7 +445,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.thirdLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.thirdLevel > 0">
                   <CCard>
                     <CCardHeader>3rd-Level</CCardHeader>
                     <CCardBody>
@@ -464,7 +464,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.fourthLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.fourthLevel > 0">
                   <CCard>
                     <CCardHeader>4th-Level</CCardHeader>
                     <CCardBody>
@@ -483,7 +483,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.fifthLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.fifthLevel > 0">
                   <CCard>
                     <CCardHeader>5th-Level</CCardHeader>
                     <CCardBody>
@@ -502,7 +502,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.sixthLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.sixthLevel > 0">
                   <CCard>
                     <CCardHeader>6th-Level</CCardHeader>
                     <CCardBody>
@@ -521,7 +521,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.seventhLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.seventhLevel > 0">
                   <CCard>
                     <CCardHeader>7th-Level</CCardHeader>
                     <CCardBody>
@@ -540,7 +540,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.eighthLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.eighthLevel > 0">
                   <CCard>
                     <CCardHeader>8th-Level</CCardHeader>
                     <CCardBody>
@@ -559,7 +559,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots !== null && character.spellSlots.ninthLevel > 0">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" class="mb-1" v-if="character.spellSlots && character.spellSlots.ninthLevel > 0">
                   <CCard>
                     <CCardHeader>9th-Level</CCardHeader>
                     <CCardBody>
@@ -578,7 +578,7 @@
                   </CCard>
                 </CCol>
 
-                <CCol xs="6" sm="6" md="4" lg="3" xl="2" v-if="character.warlockSpellSlots != null && character.usedSpellSlots !== null">
+                <CCol xs="6" sm="6" md="4" lg="3" xl="2" v-if="character.warlockSpellSlots">
                   <CCard>
                     <CCardHeader>Warlock Slots</CCardHeader>
                     <CCardBody>
@@ -802,10 +802,10 @@
       Long rest to automatically apply the following effects to {{ characterStore.characterList.value[indexToModify].name }}:
       <ul>
         <li>Recover all hit points (any temporary hit points will be lost)</li>
-        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify) != null">Your Primal Companion recovers all hit points (any temporary hit points will be lost)</li>
+        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers all hit points (any temporary hit points will be lost)</li>
         <li>Recover hit dice equal to half of your total level (minimum of 1, if multiclassed your largest hit dice are prioritized)</li>
-        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify) != null">Your Primal Companion recovers hit dice equal to half of your Ranger level (minimum of 1)</li>
-        <li>Recover all expended spell slots</li>
+        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers hit dice equal to half of your Ranger level (minimum of 1)</li>
+        <li v-if="!characterStore.characterList.value[indexToModify].usedSpellSlots">Recover all expended spell slots</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is greater than your stress threshold, it becomes equal to your threshold</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is less than or equal to your stress threshold, you lose 50 stress</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">Lose your Affliction or Virtue if you have one</li>
@@ -829,10 +829,10 @@
       <!-- Classes -->
       <CRow class="mb-1" v-for="classLevel, classLevelIndex in characterStore.characterList.value[indexToModify].characterClasses" :key="classLevelIndex">
         <CCol xs="4" sm="3" v-if="classLevel.baseClass">
-          <strong>Base Class:</strong> {{ classLevel.subclass.name }}
+          <strong>Base Class:</strong> {{ classLevel.subclass.name }} {{ classLevel.subclass.className }}
         </CCol>
         <CCol xs="4" sm="3" v-else>
-          <strong>Multiclass:</strong> {{ classLevel.subclass.name }}
+          <strong>Multiclass:</strong> {{ classLevel.subclass.name }} {{ classLevel.subclass.className }}
         </CCol>
         <CCol xs="4" sm="3">
           <strong>Level:</strong> {{ classLevel.level }}
@@ -867,7 +867,7 @@
           <CFormLabel class="fw-bold align-text-bottom" for="reduction">Max HP Reduction:</CFormLabel>
         </CCol>
         <CCol lg="2" xl="1">
-          <CFormInput id="reduction" v-model.number="characterStore.characterList.value[indexToModify].maxHitPointReduction" type="number" />
+          <CFormInput id="reduction" @input="characterStoreFunctions.setMaxHitPointReduction(indexToModify, parseInt($event.target.value))" :value="characterStore.characterList.value[indexToModify].maxHitPointReduction" type="number" />
         </CCol>
       </CRow>
 
@@ -1139,7 +1139,7 @@
                 <CFormLabel class="fw-bold">Perception:</CFormLabel>
               </CCol>
               <CCol sm="auto">
-                <CFormSelect @change="characterStoreFunctions.setPerception(parseInt($event.target.value), indexToModify)" :modelValue="'0'">
+                <CFormSelect @change="characterStoreFunctions.setPerception(parseInt($event.target.value), indexToModify)" :modelValue="characterStore.characterList.value[indexToModify].wisdom.perception.toString()">
                   <option v-for="profciency in skillProficiencyLevel" :value="profciency.level" :key="profciency.level">{{ profciency.value }}</option>
                 </CFormSelect>
               </CCol>
@@ -1288,7 +1288,7 @@
           <CFormLabel class="mt-1 fw-bold" for="reduction">Max HP Reduction:</CFormLabel>
         </CCol>
         <CCol>
-          <CFormInput id="reduction" v-model.number="characterStoreFunctions.getPrimalCompanion(indexToModify).maxHitPointReduction" type="number" />
+          <CFormInput id="reduction" @input="characterStoreFunctions.setCompanionMaxHitPointReduction(indexToModify, parseInt($event.target.value))" :value="characterStoreFunctions.getPrimalCompanion(indexToModify).maxHitPointReduction" type="number" />
         </CCol>
       </CRow>
     </CModalBody>
@@ -1382,8 +1382,8 @@
     methods: {
       async onCampaignChanged(id: number) {
         this.setSelectedCampaign(id);
-        if (id != 0) {
-          await this.getCharacterList(this.userStore.user.value?.userId as number, this.campaignStore.activeCampaign.value.campaignId);
+        if (id !== 0) {
+          await this.getCharacterList(this.userStore.user.value?.userId as number, this.campaignStore.selectedCampaign.value.campaignId);
         } else {
           this.clearCharacterList();
         }
@@ -1556,7 +1556,6 @@
   .accordion-button:not(.collapsed) {
       color: white;
       background-color: black;
-
   }
 
   .accordion-button.collapsed::before {

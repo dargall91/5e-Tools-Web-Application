@@ -95,6 +95,7 @@ export interface CharacterClass {
 export interface Subclass {
 	id: number,
 	name: string,
+	className: string,
 	classHitDieSize: number,
 	jackOfAllTrades: boolean
 };

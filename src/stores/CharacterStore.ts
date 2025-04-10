@@ -61,6 +61,15 @@ export const useCharacterStore = defineStore({
     clearCharacterList() {
       this.characterList = [];
     },
+    setMaxHitPointReduction(index: number, amount: number) {
+      const currentHitPoints = this.getHitPointMaximum(index) - this.characterList[index].damage;
+      this.characterList[index].maxHitPointReduction = amount;
+      this.characterList[index].damage = this.getHitPointMaximum(index) - currentHitPoints;
+
+      if (this.characterList[index].damage < 0) {
+        this.characterList[index].damage = 0;
+      }
+    },
     setStrength(score: number, index: number) {
       this.characterList[index].strength.score = score;
     },
@@ -169,6 +178,9 @@ export const useCharacterStore = defineStore({
 
       this.setUpdateTimer(characterIndex);
     },
+    getHitPointMaximum(index: number) {
+      return this.characterList[index].hitPointMaximum - this.characterList[index].maxHitPointReduction;
+    },
     adjustDamage(index: number, damage: number) {
       //sutract from tempt hit points first
       if (this.characterList[index].temporaryHitPoints > 0 && damage > 0) {
@@ -228,30 +240,20 @@ export const useCharacterStore = defineStore({
       this.setBaseUpdateTimer(index);
     },
     adjustDeathSaveSuccesses(index: number, amount: number) {
-      this.characterList[index].deathSaveSuccesses += amount;
-
-      if (this.characterList[index].deathSaveSuccesses < 0) {
-        this.characterList[index].deathSaveSuccesses = 0;
+      //do not adjust level if it would go below 0 or above 3
+      if ((this.characterList[index].deathSaveSuccesses < 3 && amount > 0) || (this.characterList[index].deathSaveSuccesses > 0 && amount < 0)) {
+        this.characterList[index].deathSaveSuccesses += amount;
+  
+        this.setBaseUpdateTimer(index);
       }
-
-      if (this.characterList[index].deathSaveSuccesses > 3) {
-        this.characterList[index].deathSaveSuccesses = 3;
-      }
-
-      this.setBaseUpdateTimer(index);
     },
     adjustDeathSaveFailures(index: number, amount: number) {
-      this.characterList[index].deathSaveFailures += amount;
-
-      if (this.characterList[index].deathSaveFailures < 0) {
-        this.characterList[index].deathSaveFailures = 0;
+      //do not adjust level if it would go below 0 or above 3
+      if ((this.characterList[index].deathSaveFailures < 3 && amount > 0) || (this.characterList[index].deathSaveFailures > 0 && amount < 0)) {
+        this.characterList[index].deathSaveFailures += amount;
+  
+        this.setBaseUpdateTimer(index);
       }
-
-      if (this.characterList[index].deathSaveFailures > 3) {
-        this.characterList[index].deathSaveFailures = 3;
-      }
-
-      this.setBaseUpdateTimer(index);
     },
     adjustStress(index: number, amount: number) {
       if (this.characterList[index].stress !== null) {
@@ -292,7 +294,7 @@ export const useCharacterStore = defineStore({
       }
     },
     applyAfflictionOrVirtue(index: number, roll: number) {
-      if (this.characterList[index].stress !== null) {
+      if (this.characterList[index].stress) {
         if (roll === 0)
         {
           this.characterList[index].stress!.stressStatus = null;
@@ -527,7 +529,7 @@ export const useCharacterStore = defineStore({
       }      
     },
     getCompanionMaxHitPoints(index: number) {
-      return this.isBeastmaster(index) ? this.getPrimalCompanion(index).hitPointMaximum : 0;
+      return this.isBeastmaster(index) ? this.getPrimalCompanion(index).hitPointMaximum - this.getPrimalCompanion(index).maxHitPointReduction : 0;
     },
     adjustCompanionDamage(index: number, damage: number) {
       if (this.isBeastmaster(index)) {
@@ -646,6 +648,19 @@ export const useCharacterStore = defineStore({
         this.setUpdateTimer(index);
       }
     },
+    setCompanionMaxHitPointReduction(index: number, amount: number) {
+      const primalCompanion = this.getPrimalCompanion(index);
+
+      const currentHitPoints =  primalCompanion.hitPointMaximum - primalCompanion.maxHitPointReduction - primalCompanion.damage;
+      primalCompanion.maxHitPointReduction = amount;
+      primalCompanion.damage =  primalCompanion.hitPointMaximum - primalCompanion.maxHitPointReduction - currentHitPoints;
+
+      if (primalCompanion.damage < 0) {
+        primalCompanion.damage = 0;
+      }
+
+      this.setPrimalCompanion(index, primalCompanion);
+    },
     getCompanionAbilityDescription(index: number) {
       if (this.isBeastmaster(index)) {
         const primalCompanion = this.getPrimalCompanion(index);
@@ -677,7 +692,7 @@ export const useCharacterStore = defineStore({
     },
     async cancelEdits(index: number) {
       await agent.playerCharacter.getCharacter(this.characterList[index].playerCharacterId).then((data) => {
-        this.characterList[index] = data!;
+        this.characterList[index] = data;
       });
     },
     setUpdateTimer(characterIndex: number) {
