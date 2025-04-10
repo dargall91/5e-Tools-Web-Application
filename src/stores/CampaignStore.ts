@@ -22,7 +22,7 @@ export const useCampaignStore = defineStore({
       })
     },
     setSelectedCampaign(id: number) {
-      this.selectedCampaign = this.campaignList.find(x => x.campaignId === id) as Campaign;
+      this.selectedCampaign = this.campaignList.find(x => x.campaignId === id)!;
     }
   }
 });
