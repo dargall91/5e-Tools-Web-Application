@@ -9,7 +9,7 @@
           <CFormLabel for="campaign" class="fw-bold align-text-bottom">Campaign:</CFormLabel>
         </CCol>
         <CCol xs="9" md="6">
-          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.activeCampaign.value.campaignId.toString()">
+          <CFormSelect @change="setCampaign(parseInt($event.target.value))" id="campaign" :modelValue="campaignStore.selectedCampaign.value.campaignId.toString()">
             <option v-for="(item) in campaignStore.campaignList.value" :value="item.campaignId" :key="item.campaignId">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
@@ -41,12 +41,12 @@
           <CFormLabel for="baseclass" class="fw-bold">Base Class:</CFormLabel>
         </CCol>
         <CCol class="mt-1" xs="8" md="4" lg="3">
-          <CFormSelect @change="setBaseClass(parseInt($event.target.value))" id="baseclass">
+          <CFormSelect @change="setBaseClass(parseInt($event.target.value))" id="baseclass" :modelValue="campaignStore.selectedCampaign.value.classes[0].id.toString()">
             <option v-for="(item) in campaignStore.selectedCampaign.value.classes" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
         <CCol class="mt-1" xs="8" md="4" lg="3">
-          <CFormSelect @change="setBaseSubclass(parseInt($event.target.value))" id="baseclass">
+          <CFormSelect @change="setBaseSubclass(parseInt($event.target.value))" id="subClass">
             <option v-for="(item) in subclassList(playerCharacter.characterClasses[0].subclass.id)" :value="item.id" :key="item.id">{{ item.name }}</option>
           </CFormSelect>
         </CCol>
@@ -507,7 +507,7 @@
   import { useCampaignStore } from '@/stores/CampaignStore'
   import { useCharacterStore } from '@/stores/CharacterStore'
   import { CButton, CCard, CCardBody, CCardHeader, CCol, CForm, CFormCheck, CFormInput, CFormLabel, CFormSelect, CRow, CToast, CToastBody, CToaster, CToastHeader } from '@coreui/vue'
-  import { CharacterClass, PlayerCharacter } from '@/models/PlayerCharacter'
+  import { CharacterClass, PlayerCharacter, ProficiencyBonus } from '@/models/PlayerCharacter'
   import agent from '@/api/agent'
   
   export default defineComponent({
@@ -545,12 +545,15 @@
       }
     },
     methods: {
-      setCampaign(id: number) {
+      async setCampaign(id: number) {
         if (id === 0) {
           return;
         }
 
+        var defaultClass = this.campaignStore.selectedCampaign.value.classes[0].id;
         this.setSelectedCampaign(id);
+        this.setBaseClass(defaultClass);
+        this.multiClassList.forEach(x => this.setMulticlassClass(x, defaultClass));
       },
       subclassList(subclassId: number) {
         return this.campaignStore.selectedCampaign.value.classes.find(c => c.subclasses.some(s => s.id === subclassId))!.subclasses
@@ -689,6 +692,7 @@
           deathSaveSuccesses: 0,
           deathSaveFailures: 0,
           stress: null,
+          proficiencyBonus: { level: 1, bonus: 1 } as ProficiencyBonus,
           strength: { 
             score: 10,
             proficient: false,
