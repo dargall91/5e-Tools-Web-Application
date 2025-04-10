@@ -3,9 +3,9 @@ import agent from '@/api/agent';
 import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus } from '@/models/PlayerCharacter';
 
 const updateDelay = 3000;
-let updateTimer: number | undefined;
-let baseUpdateTimer: number | undefined;
-let stressUpdateTimer: number | undefined;
+let updateTimer: number = 0;
+let baseUpdateTimer: number = 0;
+let stressUpdateTimer: number = 0;
 
 export const useCharacterStore = defineStore({
   id: 'character',
@@ -709,7 +709,7 @@ export const useCharacterStore = defineStore({
     },
     setStressUpdateTimer(characterIndex: number) {
       clearTimeout(stressUpdateTimer);
-      
+
       stressUpdateTimer = setTimeout(() => {
         this.saveStress(characterIndex);
       }, updateDelay);
