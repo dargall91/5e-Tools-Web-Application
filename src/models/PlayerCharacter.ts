@@ -1,5 +1,5 @@
 export interface PlayerCharacterMasterData {
-	stressStatuses: StressStatus[],
+	stressTypes: StressType[],
 	exhaustionLevels: ExhaustionLevel[],
 	primalCompanionTypes: PrimalCompanionType[]
 };
@@ -100,13 +100,19 @@ export interface Subclass {
 	jackOfAllTrades: boolean
 };
 
+export interface StressType {
+	name: string,
+	minimumRoll: number,
+	maximumRoll: number,
+	stressStatuses: StressStatus[]
+};
+
 export interface StressStatus {
 	id: number,
 	name: string,
-	type: string,
 	description: string,
-	minRoll: number,
-	maxRoll: number
+	stressType: string,
+	roll: number
 };
 
 export interface ProficiencyBonus {

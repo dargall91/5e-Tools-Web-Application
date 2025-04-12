@@ -142,21 +142,6 @@
               </CCol>
             </CRow>
           </CCol>
-          <CCol class="mt-1" xs="12" sm="5" md="3"  v-if="character.stress.stressLevel >= character.stress.stressThreshold && !character.stress.stressStatus">
-            <CRow>
-              <CCol>
-                <CFormLabel for="stressRoll" class="fw-bold">d100 Roll:</CFormLabel>
-              </CCol>
-            </CRow>
-            <CRow>
-              <CCol>
-                <CFormInput id="stressRoll" min="1" max="100" v-model.number="stressRoll" type="number" />
-              </CCol>
-              <CCol>
-                <CButton size="sm" color="dark" @click="characterStoreFunctions.applyAfflictionOrVirtue(characterIndex, stressRoll); stressRoll = 1;">Enter</CButton>
-              </CCol>
-            </CRow>
-          </CCol>
           <CCol class="mt-1" xs="12" lg="4">
             <CRow>
               <CCol>
@@ -172,11 +157,44 @@
           </CCol>
         </CRow>
         
+        <!--Stress Status Roll-->
+        <CRow v-if="character.stress && character.stress.stressLevel >= character.stress.stressThreshold && !character.stress.stressStatus">
+          <CCol class="mt-1" xs="12" sm="4">
+            <CRow>
+              <CCol xs="12" sm="5">
+                <CFormLabel for="stressTypeRoll" class="fw-bold">Stress Type Roll:</CFormLabel>
+              </CCol>
+              <CCol>
+                <CFormInput id="stressTypeRoll" min="1" max="10" v-model.number="stressTypeRoll" type="number" />
+              </CCol>
+              <CCol>
+                <strong>{{ characterStoreFunctions.getStressTypeName(stressTypeRoll) ?? 'Invalid Roll' }}</strong>
+              </CCol>
+            </CRow>
+            <CRow class="mt-1" v-if="characterStoreFunctions.getStressTypeName(stressTypeRoll)">
+              <CCol xs="12" sm="5">
+                <CFormLabel for="stressStatusRoll" class="fw-bold">Stress Status Roll:</CFormLabel>
+              </CCol>
+              <CCol>
+                <CFormInput id="stressStatusRoll" min="1" :max="characterStoreFunctions.getStressStatusMaxRoll(stressTypeRoll)" v-model.number="stressStatusRoll" type="number" />
+              </CCol>
+              <CCol>
+                <strong>{{ characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll) ?? 'Reroll' }}</strong>
+              </CCol>
+            </CRow>
+            <CRow v-if="characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll)">
+              <CCol class="mt-1">
+                <CButton size="sm" color="dark" @click="characterStoreFunctions.applyStressStatus(characterIndex, stressTypeRoll, stressStatusRoll); stressStatusRoll = 1;">Apply Stress Status</CButton>
+              </CCol>
+            </CRow>
+          </CCol>
+        </CRow>
+
         <!-- Affliction/Virtue -->
         <CCard class="mt-1" v-if="character.stress?.stressStatus">
           <CCardHeader>
-            <strong>{{ character.stress!.stressStatus.type }}</strong>: {{ character.stress?.stressStatus.name }}
-            <CButton size="sm" color="dark" @click="characterStoreFunctions.applyAfflictionOrVirtue(characterIndex, 0)">Clear</CButton>
+            <strong>{{ character.stress!.stressStatus.name }}</strong> <em>({{ character.stress?.stressStatus.stressType }})</em>
+            <CButton class="ms-2" size="sm" color="dark" @click="characterStoreFunctions.clearStressStatus(characterIndex)">Clear</CButton>
           </CCardHeader>
           <CCardBody>
             <span v-html="character.stress!.stressStatus.description"></span>
@@ -1383,7 +1401,8 @@
         reviveCharacter: false,
         levelUp: false,
         newMulticlass: { subclass: { id: 0 } as Subclass } as CharacterClass,
-        stressRoll: 1,
+        stressTypeRoll: 1,
+        stressStatusRoll: 1,
         characterToEdit: {} as PlayerCharacter,
         indexToModify: -1,
         idToRevive: 0

@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import agent from '@/api/agent';
-import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus } from '@/models/PlayerCharacter';
+import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus, StressType } from '@/models/PlayerCharacter';
 
 const updateDelay = 3000;
 let updateTimer: number = 0;
@@ -309,15 +309,37 @@ export const useCharacterStore = defineStore({
         }        
       }
     },
-    applyAfflictionOrVirtue(index: number, roll: number) {
+    getStressTypeName(stressTypeRoll: number) {
+      return this.masterData.stressTypes!.find(x => x.minimumRoll <= stressTypeRoll && x.maximumRoll >= stressTypeRoll)?.name;
+    },
+    getStressStatusMaxRoll(stressTypeRoll: number) {
+      const type = this.masterData.stressTypes!.find(x => x.minimumRoll <= stressTypeRoll && x.maximumRoll >= stressTypeRoll);
+
+      return Math.max(...type?.stressStatuses.map(x => x.roll) ?? [-1]) + 1;
+    },
+    getStressStatusName(stressTypeRoll: number, stressStatusRoll: number) {
+      const type = this.masterData.stressTypes!.find(x => x.minimumRoll <= stressTypeRoll && x.maximumRoll >= stressTypeRoll);
+
+      return type?.stressStatuses.find(x => x.roll == stressStatusRoll)?.name;
+    },
+    applyStressStatus(index: number, stressTypeRoll: number, stressStatusRoll: number) {
       if (this.characterList[index].stress) {
-        if (roll === 0)
-        {
-          this.characterList[index].stress!.stressStatus = null;
-        }
-        else {
-          this.characterList[index].stress!.stressStatus = this.masterData.stressStatuses!.find(x => x.minRoll <= roll && x.maxRoll >= roll) as StressStatus;
-        }
+          const type = this.masterData.stressTypes!.find(x => x.minimumRoll <= stressTypeRoll && x.maximumRoll >= stressTypeRoll);
+
+          if (type) {
+            const status = type.stressStatuses.find(x => x.roll == stressStatusRoll);
+
+            if (status) {
+              this.characterList[index].stress!.stressStatus = status;
+
+              this.setStressUpdateTimer(index);
+            }
+          }          
+      }
+    },
+    clearStressStatus(index: number) {
+      if (this.characterList[index].stress) {
+        this.characterList[index].stress!.stressStatus = null;
 
         this.setStressUpdateTimer(index);
       }
@@ -692,10 +714,13 @@ export const useCharacterStore = defineStore({
       if (this.isBeastmaster(index)) {
         const primalCompanion = this.getPrimalCompanion(index);
 
-        const wisSpellSave = 8 + this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
-        const toHitBonus = this.getProficiencyBonus(index) + Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
-        const strDamage = Math.floor(( primalCompanion.primalCompanionType.strength - 10) / 2) + this.getProficiencyBonus(index);
-        const dexDamage = Math.floor(( primalCompanion.primalCompanionType.dexterity - 10) / 2) + this.getProficiencyBonus(index);
+        const proficiencyBonus = this.getProficiencyBonus(index);
+        const wisdomBonus = Math.floor(( this.characterList[index].wisdom.score - 10) / 2);
+
+        const toHitBonus = proficiencyBonus + wisdomBonus;
+        const wisSpellSave = 8 + proficiencyBonus + wisdomBonus;
+        const strDamage = Math.floor(( primalCompanion.primalCompanionType.strength - 10) / 2) + proficiencyBonus;
+        const dexDamage = Math.floor(( primalCompanion.primalCompanionType.dexterity - 10) / 2) + proficiencyBonus;
 
         return primalCompanion.primalCompanionType.actionDescription
           .replace("<toHitBonus>", toHitBonus.toString())
