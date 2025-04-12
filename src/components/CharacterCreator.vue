@@ -61,7 +61,7 @@
       </CRow>
 
       <!-- multiclass -->
-      <template v-if="!campaignStore.selectedCampaign.value.allowsMulticlassing" >
+      <template v-if="campaignStore.selectedCampaign.value.allowsMulticlassing" >
         <CRow v-for="(multiclass, index) in multiClassList" :id="index.toString()" :key="index" class="mt-1">
           <CCol xs="4" md="2" class="mt-2">
             <CFormLabel :for="'multiClass' + index" class="fw-bold">Multiclass:</CFormLabel>
@@ -550,6 +550,7 @@
           return;
         }
 
+        useCampaignStore().setSelectedCampaign(id);
         var defaultClass = this.campaignStore.selectedCampaign.value.classes[0].id;
         this.setSelectedCampaign(id);
         this.setBaseClass(defaultClass);
