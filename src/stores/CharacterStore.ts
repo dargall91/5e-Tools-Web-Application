@@ -259,7 +259,9 @@ export const useCharacterStore = defineStore({
       return this.characterList[index].exhaustionLevel?.id ?? 0;
     },
     getExhaustionDescription(index: number) {
-      return this.characterList[index].exhaustionLevel?.description ?? "";
+      return this.getExhaustionLevel(index) > 0
+        ? this.masterData.exhaustionLevels.filter(x => x.id <= this.getExhaustionLevel(index)).map(x => x.description).join("; ")
+        : '';
     },
     adjustExhaustionLevel(index: number, amount: number) {
       const exhaustionLevel = this.getExhaustionLevel(index);
