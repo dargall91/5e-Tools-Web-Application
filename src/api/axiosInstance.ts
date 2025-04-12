@@ -30,8 +30,8 @@ const errorHandler = (error: AxiosError): Promise<never> => {
 }
 
 const axiosInstance = axios.create({
-    baseURL: '/api/v1/',
-    timeout: 4000,
+    baseURL: process.env.VUE_APP_API_URL,
+    timeout: 4000
 });
 
 axiosInstance.interceptors.response.use(
