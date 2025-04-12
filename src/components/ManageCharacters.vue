@@ -115,12 +115,18 @@
 
         <!-- Exhaustion -->
         <CRow>
-          <CCol class="mt-1">
-            <strong>Exhaustion Level: </strong> {{ characterStoreFunctions.getExhaustionLevel(characterIndex) }}
-            <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, -1)">-1</CButton>
-            <CButton size="sm" color="success" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, 1)">+1</CButton>
-            {{ characterStoreFunctions.getExhaustionDescription(characterIndex) }}
-          </CCol>
+          <CRow>
+            <CCol class="mt-1">
+              <strong>Exhaustion Level: </strong> {{ characterStoreFunctions.getExhaustionLevel(characterIndex) }}
+              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, -1)">-1</CButton>
+              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, 1)">+1</CButton>
+            </CCol>
+          </CRow>
+          <CRow>
+            <CCol>
+              {{ characterStoreFunctions.getExhaustionDescription(characterIndex) }}
+            </CCol>
+          </CRow>
         </CRow>
 
         <!-- Stress -->
