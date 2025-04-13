@@ -30,7 +30,7 @@ const errorHandler = (error: AxiosError): Promise<never> => {
 }
 
 const axiosInstance = axios.create({
-    baseURL: process.env.VUE_APP_API_URL,
+    baseURL: `http://${window.location.hostname}:${process.env.VUE_APP_API_PORT}/api/v1`,
     timeout: 4000
 });
 
