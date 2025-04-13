@@ -516,13 +516,13 @@ export const useCharacterStore = defineStore({
       return this.characterList[index].isJackOfAllTrades;
     },
     isBeastmaster(index: number) {
-      return this.characterList[index].characterClasses.some(x => x.primalCompanion !== null && x.level > 3);
+      return this.characterList[index].characterClasses.some(x => x.primalCompanion && x.level > 2);
     },
     getPrimalCompanion(index: number) {
-      return this.characterList[index].characterClasses.find(x => x.primalCompanion !== null)!.primalCompanion as PrimalCompanion;
+      return this.characterList[index].characterClasses.find(x => x.primalCompanion)!.primalCompanion as PrimalCompanion;
     },
     setPrimalCompanion(index: number, primalCompanion: PrimalCompanion) {
-      this.characterList[index].characterClasses.map(x => x.primalCompanion === null ? null : primalCompanion);
+      this.characterList[index].characterClasses.map(x => x.primalCompanion ? primalCompanion : null);
     },
     async longRest(index: number) {
       await agent.playerCharacter.longRest(this.characterList[index].playerCharacterId)
