@@ -840,9 +840,11 @@
         <li>Recover hit dice equal to half of your total level (minimum of 1, if multiclassed your largest hit dice are prioritized)</li>
         <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers hit dice equal to half of your Ranger level (minimum of 1)</li>
         <li v-if="!characterStore.characterList.value[indexToModify].usedSpellSlots">Recover all expended spell slots</li>
+        <li v-if="characterStoreFunctions.getExhaustionLevel(indexToModify) > 0">Lose one level of Exhaustion</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is greater than your stress threshold, it becomes equal to your threshold</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is less than or equal to your stress threshold, you lose 50 stress</li>
-        <li v-if="campaignStore.selectedCampaign.value.usesStress">Lose your Affliction or Virtue if you have one</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">Lose your Virtue if you have one</li>
+        <li v-if="campaignStore.selectedCampaign.value.usesStress">Lose your Affliction if you have one and you stress level drops below half of your threshold</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">Recover 5 meditation dice</li>
       </ul>
 
