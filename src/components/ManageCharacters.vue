@@ -743,24 +743,27 @@
               </CRow>
 
               <!-- Ability -->
-              <CRow class="mt-1">
+              <CRow class="mt-2">
                 <CCol>
-                  <strong>Ability:</strong>
-                </CCol>
-                <CCol xs="12">
-                  <strong>{{ characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.abilityName }}:</strong> {{ characterStoreFunctions.getCompanionAbilityDescription(characterIndex) }} 
+                  <CCard>
+                    <CCardHeader>{{ characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.abilityName }} </CCardHeader>
+                    <CCardBody>
+                      {{ characterStoreFunctions.getCompanionAbilityDescription(characterIndex) }}
+                    </CCardBody>
+                  </CCard>
                 </CCol>
               </CRow>
 
               <!-- Action -->
-              <CRow class="mt-1">
-                <CCol xs="12">
-                  <strong>Action:</strong>
-                </CCol>
+              <CRow class="mt-2">
                 <CCol>
-                  <strong>{{ characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.actionName }}:</strong> <span v-html="characterStoreFunctions.getCompanionActionDescription(characterIndex)" ></span>
+                  <CCard>
+                    <CCardHeader>{{ characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.actionName }} </CCardHeader>
+                    <CCardBody>
+                      <span v-html="characterStoreFunctions.getCompanionActionDescription(characterIndex)"></span>
+                    </CCardBody>
+                  </CCard>
                 </CCol>
-
               </CRow>
 
               <!-- Ability Scores -->
