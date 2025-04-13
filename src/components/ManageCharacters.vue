@@ -116,7 +116,7 @@
         <!-- Exhaustion -->
         <CRow>
           <CRow>
-            <CCol class="mt-1">
+            <CCol class="mt-1" v-model="character.exhaustionLevel">
               <strong>Exhaustion Level: </strong> {{ characterStoreFunctions.getExhaustionLevel(characterIndex) }}
               <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, -1)">-1</CButton>
               <CButton size="sm" color="success" @click="characterStoreFunctions.adjustExhaustionLevel(characterIndex, 1)">+1</CButton>
