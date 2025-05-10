@@ -165,32 +165,32 @@
         
         <!--Stress Status Roll-->
         <CRow v-if="character.stress && character.stress.stressLevel >= character.stress.stressThreshold && !character.stress.stressStatus">
-          <CCol class="mt-1" xs="12" sm="4">
+          <CCol class="mt-1">
             <CRow>
-              <CCol xs="12" sm="5">
-                <CFormLabel for="stressTypeRoll" class="fw-bold">Stress Type Roll:</CFormLabel>
+              <CCol class="mt-1" xs="12" sm="5" md="4" lg="2">
+                <CFormLabel for="stressTypeRoll" class="fw-bold">Stress Type Roll (d10):</CFormLabel>
               </CCol>
-              <CCol>
+              <CCol xs="2" md="1">
                 <CFormInput id="stressTypeRoll" min="1" max="10" v-model.number="stressTypeRoll" type="number" />
               </CCol>
-              <CCol>
-                <strong>{{ characterStoreFunctions.getStressTypeName(stressTypeRoll) ?? 'Invalid Roll' }}</strong>
+              <CCol class="mt-1">
+                <em><strong>{{ characterStoreFunctions.getStressTypeName(stressTypeRoll) ?? 'Invalid Roll' }}</strong></em>
               </CCol>
             </CRow>
             <CRow class="mt-1" v-if="characterStoreFunctions.getStressTypeName(stressTypeRoll)">
-              <CCol xs="12" sm="5">
-                <CFormLabel for="stressStatusRoll" class="fw-bold">Stress Status Roll:</CFormLabel>
+              <CCol class="mt-1" xs="12" sm="5" md="4" lg="2">
+                <CFormLabel for="stressStatusRoll" class="fw-bold">{{ characterStoreFunctions.getStressTypeName(stressTypeRoll) }} Roll (d{{ characterStoreFunctions.getStressStatusMaxRoll(stressTypeRoll) }}):</CFormLabel>
               </CCol>
-              <CCol>
+              <CCol xs="2" md="1">
                 <CFormInput id="stressStatusRoll" min="1" :max="characterStoreFunctions.getStressStatusMaxRoll(stressTypeRoll)" v-model.number="stressStatusRoll" type="number" />
               </CCol>
-              <CCol>
-                <strong>{{ characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll) ?? 'Reroll' }}</strong>
+              <CCol class="mt-1">
+                <em><strong>{{ characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll) ?? 'Reroll' }}</strong></em>
               </CCol>
             </CRow>
             <CRow v-if="characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll)">
               <CCol class="mt-1">
-                <CButton size="sm" color="dark" @click="characterStoreFunctions.applyStressStatus(characterIndex, stressTypeRoll, stressStatusRoll); stressStatusRoll = 1;">Apply Stress Status</CButton>
+                <CButton size="sm" color="dark" @click="characterStoreFunctions.applyStressStatus(characterIndex, stressTypeRoll, stressStatusRoll); stressStatusRoll = 1;">Apply {{ characterStoreFunctions.getStressTypeName(stressTypeRoll) }} ({{ characterStoreFunctions.getStressStatusName(stressTypeRoll, stressStatusRoll) }})</CButton>
               </CCol>
             </CRow>
           </CCol>
@@ -840,8 +840,8 @@
       <ul>
         <li>Recover all hit points (any temporary hit points will be lost)</li>
         <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers all hit points (any temporary hit points will be lost)</li>
-        <li>Recover hit dice equal to half of your total level (minimum of 1, if multiclassed your largest hit dice are prioritized)</li>
-        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers hit dice equal to half of your Ranger level (minimum of 1)</li>
+        <li>Recover hit dice equal to half* of your total level (minimum of 1, if multiclassed your largest hit dice are prioritized)</li>
+        <li v-if="characterStoreFunctions.isBeastmaster(indexToModify)">Your Primal Companion recovers hit dice equal to half* of your Ranger level (minimum of 1)</li>
         <li v-if="!characterStore.characterList.value[indexToModify].usedSpellSlots">Recover all expended spell slots</li>
         <li v-if="characterStoreFunctions.getExhaustionLevel(indexToModify) > 0">Lose one level of Exhaustion</li>
         <li v-if="campaignStore.selectedCampaign.value.usesStress">If your stress level is greater than your stress threshold, it becomes equal to your threshold</li>
