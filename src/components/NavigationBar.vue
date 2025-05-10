@@ -10,10 +10,10 @@
           <li class="nav-item">
             <RouterLink to="/" class="nav-link">Login</RouterLink>
           </li>
-          <li class="nav-item">
+          <li v-if="userStore.user.value.userId > 0" class="nav-item">
             <RouterLink to="/ManageCharacters" class="nav-link">Manage Characters</RouterLink>
           </li>
-          <li class="nav-item">
+          <li v-if="userStore.user.value.userId > 0" class="nav-item">
             <RouterLink to="/CharacterCreator" class="nav-link">Character Creator</RouterLink>
           </li>
           <li v-if="userStore.user.value.isAdmin" class="nav-item">
