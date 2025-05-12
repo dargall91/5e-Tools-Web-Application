@@ -30,7 +30,8 @@ export interface PlayerCharacter {
 	warlockSpellSlots: WarlockSpellSlots | null,
 	usedSpellSlots: UsedSpellSlots | null,
 	characterClasses: CharacterClass[],
-	isJackOfAllTrades: boolean | null
+	isJackOfAllTrades: boolean | null,
+	currency: Currency;
 };
 
 export interface Stress {
@@ -196,3 +197,10 @@ export interface PrimalCompanionType {
 	actionName: string,
 	actionDescription: string
 };
+
+export interface Currency {
+	copper: number;
+	silver: number;
+	gold: number;
+	platinum: number;
+}

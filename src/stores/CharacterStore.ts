@@ -1,11 +1,21 @@
 import { defineStore } from 'pinia'
 import agent from '@/api/agent';
 import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus, StressType } from '@/models/PlayerCharacter';
+import { useToast } from 'vue-toastification';
 
-const updateDelay = 3000;
+const updateDelay = 2000;
 let updateTimer: number = 0;
 let baseUpdateTimer: number = 0;
 let stressUpdateTimer: number = 0;
+const toast = useToast();
+
+function createToast(message: string, type: string) {
+  if (type === 'error') {
+    toast.error(message)
+  } else {
+    toast(message);
+  }
+}
 
 export const useCharacterStore = defineStore({
   id: 'character',
@@ -733,6 +743,138 @@ export const useCharacterStore = defineStore({
 
       return "";
     },
+    getTotalGold(index: number) {
+      const character = this.characterList[index];
+      const total = character.currency.gold 
+        + character.currency.platinum * 10
+        + character.currency.copper / 100.0
+        + character.currency.silver / 10.0;
+      return total.toFixed(2);
+    },
+    adjustCopper(index: number, amount: number) {
+      const currency = this.characterList[index].currency;
+
+      //when subtracting, automatically convert next greatest coin type then subtract
+      if (amount < 0 && (-1 * amount) > currency.copper) {
+        const totalAsCopper = (parseFloat(this.getTotalGold(index)) * 100) as number;
+
+        if ((-1 * amount) > totalAsCopper) {
+          createToast(`Not enough money`, 'error');
+          return;
+        }
+        
+        while (currency.copper < (amount * -1)) {
+          if (currency.silver > 0) {
+            currency.silver--;
+            currency.copper += 10;
+          } else if (currency.gold > 0) {
+            currency.gold--;
+            currency.silver += 9;
+            currency.copper += 10;
+          } else {
+            currency.platinum--;
+            currency.gold += 9;
+            currency.silver += 9;
+            currency.copper += 10;
+          }
+        }
+      }
+      
+      currency.copper += amount;
+
+      this.setUpdateTimer(index);
+    },
+    adjustSilver(index: number, amount: number) {
+      const currency = this.characterList[index].currency;
+      
+      //when subtracting, automatically convert next greatest coin type then subtract
+      if (amount < 0 && (-1 * amount) > currency.silver) {
+        const totalAsSilver = (parseFloat(this.getTotalGold(index)) * 10) as number;
+
+        if ((-1 * amount) > totalAsSilver) {
+          createToast(`Not enough money`, 'error');
+          return;
+        }
+        
+        while (currency.silver < (amount * -1)) {
+          if (currency.copper >= 10) {
+            currency.silver++;
+            currency.copper -= 10;
+          } else if (currency.gold > 0) {
+            currency.gold--;
+            currency.silver += 10;
+          } else {
+            currency.platinum--;
+            currency.gold += 9;
+            currency.silver += 10;
+          }
+        }
+      }
+
+      currency.silver += amount;
+
+      this.setUpdateTimer(index);
+    },
+    adjustGold(index: number, amount: number) {
+      const currency = this.characterList[index].currency;
+      
+      if (amount < 0 && (-1 * amount) > currency.gold) {
+        const totalGold = parseFloat(this.getTotalGold(index)) as number;
+
+        //if the amount of gold to subtract is more than amount of money on hand, it cannot be subtracted
+        if ((-1 * amount) > totalGold) {
+          createToast(`Not enough money`, 'error');
+          return;
+        }
+        
+        while (currency.gold < (amount * -1)) {
+          if (currency.copper >= 100) {
+            currency.gold++;
+            currency.copper -= 100;
+          } else if (currency.silver >= 10) {
+            currency.gold++;
+            currency.silver -= 10;
+          } else {
+            currency.platinum--;
+            currency.gold += 10;
+          }
+        }
+      }
+
+      currency.gold += amount;
+
+      this.setUpdateTimer(index);
+    },
+    adjustPlatinum(index: number, amount: number) {
+      const currency = this.characterList[index].currency;
+
+      if (amount < 0 && (-1 * amount) > currency.platinum) {
+        const totalAsPlatinum = (parseFloat(this.getTotalGold(index)) / 10.0) as number;
+
+        //if the amount of platinum to subtract is more than amount of money on hand, it cannot be subtracted
+        if ((-1 * amount) > totalAsPlatinum) {
+          createToast(`Not enough money`, 'error');
+          return;
+        }
+        
+        while (currency.platinum < (amount * -1)) {
+          if (currency.copper >= 1000) {
+            currency.platinum++;
+            currency.copper -= 1000;
+          } else if (currency.silver >= 100) {
+            currency.platinum++;
+            currency.silver -= 100;
+          } else {
+            currency.platinum++;
+            currency.gold -= 10;
+          }
+        }
+      }
+
+      currency.platinum += amount;
+
+      this.setUpdateTimer(index);
+    },
     async cancelEdits(index: number) {
       await agent.playerCharacter.getCharacter(this.characterList[index].playerCharacterId).then((data) => {
         this.characterList[index] = data;
@@ -770,6 +912,7 @@ export const useCharacterStore = defineStore({
 
       stressUpdateTimer = setTimeout(() => {
         this.saveStress(characterIndex);
+        stressUpdateTimer = 0;
       }, updateDelay);
     },
     async killCharacter(index: number) {

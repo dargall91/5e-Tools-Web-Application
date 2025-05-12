@@ -207,7 +207,7 @@
           </CCardBody>
         </CCard>
 
-        <!-- Ability Scores, Spell Slots, Primal Companion -->
+        <!-- Ability Scores, Spell Slots, Primal Companion, Inventory -->
         <CAccordion class="mt-1" always-open>
           <!-- Ability Scores -->
           <CAccordionItem>
@@ -819,6 +819,107 @@
                     <CCardHeader>CHA: {{ characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.charisma }} ({{ getScoreModifierString(characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.charisma) }})</CCardHeader>
                     <CCardBody>
                       <strong>Skill/Save Bonus:</strong> {{ getCompanionSkillSaveBonus(characterIndex, characterStoreFunctions.getPrimalCompanion(characterIndex).primalCompanionType.charisma) }}
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+            </CAccordionBody>
+          </CAccordionItem>
+          
+          <!-- Inventory -->
+          <CAccordionItem>
+            <CAccordionHeader>Inventory</CAccordionHeader>
+            <CAccordionBody>
+              <CRow>
+                <CCol>
+                  <CCard>
+                    <CCardHeader>Currency: {{ characterStoreFunctions.getTotalGold(characterIndex)}}</CCardHeader>
+                    <CCardBody>
+                      <CRow>
+                        <!-- Copper -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Copper:</strong> {{ character.currency.copper }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Silver -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Silver:</strong> {{ character.currency.silver }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Gold -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Gold:</strong> {{ character.currency.gold }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Platinum -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Platinum:</strong> {{ character.currency.platinum }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+                      </CRow>
                     </CCardBody>
                   </CCard>
                 </CCol>
