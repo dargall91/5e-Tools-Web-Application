@@ -41,13 +41,15 @@ export const useCharacterStore = defineStore({
           this.characterList = data!;
         });
 
-
       await agent.playerCharacter.getCharacters(userId, campaignId, true)
         .then((data) => {
           this.deadCharacterList = data!;
         });
     },
     async saveCharacter(index: number) {
+      await agent.playerCharacter.updatePlayerCharacter(this.characterList[index]);
+    },
+    async saveCharacterAndGetChanges(index: number) {
       await agent.playerCharacter.updatePlayerCharacter(this.characterList[index])
         .then((data) => {
           this.characterList[index] = data!;
@@ -57,15 +59,8 @@ export const useCharacterStore = defineStore({
       await agent.playerCharacter.updatePlayerCharacterBase(this.characterList[index]);
     },
     async saveStress(index: number) {
-      if (this.characterList[index].stress !== null)
-      {
-        await agent.playerCharacter.updateStress(this.characterList[index].playerCharacterId, this.characterList[index].stress!)
-          .then((data) => {
-            //stress status is not transferred, preseve value
-            const stressStatus = this.characterList[index].stress!.stressStatus;
-            this.characterList[index].stress = data!;
-            this.characterList[index].stress!.stressStatus = stressStatus;
-          });
+      if (this.characterList[index].stress !== null) {
+        await agent.playerCharacter.updateStress(this.characterList[index].playerCharacterId, this.characterList[index].stress!);
       }      
     },
     clearCharacterList() {

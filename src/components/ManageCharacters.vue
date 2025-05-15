@@ -1549,7 +1549,7 @@
           this.characterStore.characterList.value[this.indexToModify].characterClasses.push(this.newMulticlass);
         }
 
-        await this.characterStoreFunctions.saveCharacter(this.indexToModify);
+        await this.characterStoreFunctions.saveCharacterAndGetChanges(this.indexToModify);
         this.newMulticlass = { subclass: { id: 0 } as Subclass } as CharacterClass;
         this.indexToModify = -1;
       },
