@@ -1,7 +1,7 @@
 import { Campaign } from "@/models/Campaign";
 import { LoginRegisterRequest } from "@/models/LoginRegisterRequest";
 import { User } from "@/models/User";
-import { PlayerCharacter, PlayerCharacterMasterData, Stress } from "@/models/PlayerCharacter";
+import { Item, PlayerCharacter, PlayerCharacterMasterData, Stress } from "@/models/PlayerCharacter";
 import { AxiosResponse } from "axios";
 import axiosInstance from "./axiosInstance";
 import { Combatant } from "@/models/Combatant";
@@ -13,7 +13,8 @@ const requests = {
   get: <T>(url: string) => axiosInstance.get<ResponseWrapper<T>>(url).then(responseBody),
   postNoBody: <T>(url: string) => axiosInstance.post<ResponseWrapper<T>>(url).then(responseBody),
   post: <T>(url: string, body: any) => axiosInstance.post<ResponseWrapper<T>>(url, body).then(responseBody),
-  put: <T>(url: string, body: any) => axiosInstance.put<ResponseWrapper<T>>(url, body).then(responseBody)
+  put: <T>(url: string, body: any) => axiosInstance.put<ResponseWrapper<T>>(url, body).then(responseBody),
+  putNoBody: <T>(url: string) => axiosInstance.put<ResponseWrapper<T>>(url).then(responseBody)
 };
 
 const user = {
@@ -37,6 +38,9 @@ const campaign = {
 const playerCharacter = {
   getMasterData(campaignId: number) {
     return requests.get<PlayerCharacterMasterData>(`player-character/master-data?campaignId=${campaignId}`);
+  },
+  getItemList() {
+    return requests.get<Item[]>('player-character/items');
   },
   getCharacter(characterId: number) {
     return requests.get<PlayerCharacter>(`player-character/${characterId}`);
@@ -64,7 +68,10 @@ const playerCharacter = {
   },
   reviveCharacter(characterId: number) {
     return requests.postNoBody<PlayerCharacter>(`player-character/${characterId}/revive`);
-  },  
+  },
+  addNewItem(name: string) {
+    return requests.putNoBody<Item>(`player-character/items?name=${name}`);
+  }
 }
 
 const combat = {

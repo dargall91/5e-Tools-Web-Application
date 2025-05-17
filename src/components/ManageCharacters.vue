@@ -207,7 +207,7 @@
           </CCardBody>
         </CCard>
 
-        <!-- Ability Scores, Spell Slots, Primal Companion -->
+        <!-- Ability Scores, Spell Slots, Primal Companion, Inventory -->
         <CAccordion class="mt-1" always-open>
           <!-- Ability Scores -->
           <CAccordionItem>
@@ -825,6 +825,128 @@
               </CRow>
             </CAccordionBody>
           </CAccordionItem>
+          
+          <!-- Inventory -->
+          <CAccordionItem>
+            <CAccordionHeader>Inventory</CAccordionHeader>
+            <CAccordionBody>
+              <CRow>
+                <CCol lg="6">
+                  <CCard class="mb-1">
+                    <CCardHeader>Currency: {{ characterStoreFunctions.getTotalGold(characterIndex)}}</CCardHeader>
+                    <CCardBody>
+                      <CRow>
+                        <!-- Copper -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Copper:</strong> {{ character.currency.copper }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustCopper(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustCopper(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Silver -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Silver:</strong> {{ character.currency.silver }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustSilver(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustSilver(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Gold -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Gold:</strong> {{ character.currency.gold }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustGold(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustGold(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+
+                        <!-- Platinum -->
+                        <CCol lg="6" xl="4">
+                          <CRow>
+                            <CCol>
+                              <strong>Platinum:</strong> {{ character.currency.platinum }}
+                            </CCol>
+                          </CRow>
+                          <CRow class="mt-1">
+                            <CCol>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -100)">-100</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -10)">-10</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -5)">-5</CButton>
+                              <CButton size="sm" color="danger" @click="characterStoreFunctions.adjustPlatinum(characterIndex, -1)">-1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 1)">+1</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 5)">+5</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 10)">+10</CButton>
+                              <CButton size="sm" color="success" @click="characterStoreFunctions.adjustPlatinum(characterIndex, 100)">+100</CButton>
+                            </CCol>
+                          </CRow>
+                        </CCol>
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+                <CCol>
+                  <CCard class="mb-1">
+                    <CCardHeader>Items:</CCardHeader>
+                    <CCardBody>
+                      <CRow class="mb-1" v-for="item, itemIndex in characterStore.characterList.value[characterIndex].inventoryItems" :key="itemIndex">
+                        <CCol>
+                          <strong>{{ item.name }}: </strong> {{ item.quantity }}
+                          <CButton size="sm" color="danger" @click="adjustItemQuantity(characterIndex, item, -1)">-1</CButton>
+                          <CButton size="sm" color="success" @click="adjustItemQuantity(characterIndex, item, 1)">+1</CButton>
+                          &nbsp;
+                          <CButton size="sm" color="dark" @click="characterStoreFunctions.removeInventoryItem(characterIndex, itemIndex)">Remove</CButton>
+                        </CCol>
+                      </CRow>
+                      <CRow>
+                        <CCol>
+                          <CButton size="sm" color="dark" @click="showAddItem(characterIndex)">Add Item</CButton>
+                        </CCol>
+                      </CRow>
+                    </CCardBody>
+                  </CCard>
+                </CCol>
+              </CRow>
+            </CAccordionBody>
+          </CAccordionItem>
         </CAccordion>
       </CAccordionBody>
     </CAccordionItem>
@@ -1355,13 +1477,36 @@
       <CModalTitle>Revive Character</CModalTitle>
     </CModalHeader>
     <CModalBody>
-      <CFormSelect @change="setIdToRevive(parseInt($event.target.value))" :id="'multiClass'" :model-value="idToRevive.toString()">
+      <CFormSelect @change="setIdToRevive(parseInt($event.target.value))" :id="'revive'" :model-value="idToRevive.toString()">
         <option v-for="(character) in characterStore.deadCharacterList.value" :value="character.playerCharacterId" :key="character.playerCharacterId">{{ character.name }}</option>
       </CFormSelect>
     </CModalBody>
     <CModalFooter>
       <CButton color="secondary" @click="closeReviveCharacter()">Cancel</CButton>
       <CButton color="dark" @click="closeReviveCharacterAndRevive()">Revive</CButton>
+    </CModalFooter>
+  </CModal>
+
+  <CModal :visible="addItem" @close="closeAddItem()">
+    <CModalHeader>
+      <CModalTitle>Add Item</CModalTitle>
+    </CModalHeader>
+    <CModalBody>
+      <CFormSelect text="Select New Item to add an item to this list" @change="setSelectedItem(parseInt($event.target.value))" :id="'items'" :model-value="selectedItemId.toString()">
+        <option v-for="(item) in items" :value="item.id" :key="item.id">{{ item.name }}</option>
+      </CFormSelect>
+      <CRow v-if="selectedItemId === 0">
+        <CCol xs="4" sm="3">
+          <CFormLabel class="mt-1 fw-bold" for="companionName">Item Name:</CFormLabel>
+        </CCol>
+        <CCol>
+          <CFormInput id="itemName" type="text" v-model="newItemName" />
+        </CCol>
+      </CRow>
+    </CModalBody>
+    <CModalFooter>
+      <CButton color="secondary" @click="closeAddItem()">Cancel</CButton>
+      <CButton color="dark" @click="closeAddItemAndSubmit()">Add</CButton>
     </CModalFooter>
   </CModal>
 
@@ -1374,7 +1519,8 @@
   import { useCampaignStore } from '@/stores/CampaignStore'
   import { useCharacterStore } from '@/stores/CharacterStore'
   import { CAccordion, CAccordionBody, CAccordionHeader, CAccordionItem, CButton, CCard, CCardBody, CCardHeader, CCol, CFormCheck, CFormInput, CFormLabel, CFormSelect, CModal, CModalBody, CModalFooter, CModalHeader, CModalTitle, CRow } from '@coreui/vue'
-  import { Subclass, PlayerCharacter, CharacterClass } from '@/models/PlayerCharacter'
+  import { Subclass, PlayerCharacter, CharacterClass, Item, InventoryItem } from '@/models/PlayerCharacter'
+  import agent from '@/api/agent';
   
   export default defineComponent({
     name: "ManageCharacters",
@@ -1383,7 +1529,8 @@
       return {
         userStore: storeToRefs(useUserStore()),
         campaignStore: storeToRefs(useCampaignStore()),
-        characterStore: storeToRefs(useCharacterStore())
+        characterStore: storeToRefs(useCharacterStore()),
+        characterAgent: agent.playerCharacter
       };
     },
     data() {
@@ -1416,7 +1563,11 @@
         stressStatusRoll: 1,
         characterToEdit: {} as PlayerCharacter,
         indexToModify: -1,
-        idToRevive: 0
+        idToRevive: 0,
+        addItem: false,
+        items: [] as Item[],
+        selectedItemId: 1,
+        newItemName: ''
       }
     },
     methods: {
@@ -1448,7 +1599,7 @@
           this.characterStore.characterList.value[this.indexToModify].characterClasses.push(this.newMulticlass);
         }
 
-        await this.characterStoreFunctions.saveCharacter(this.indexToModify);
+        await this.characterStoreFunctions.saveCharacterAndGetChanges(this.indexToModify);
         this.newMulticlass = { subclass: { id: 0 } as Subclass } as CharacterClass;
         this.indexToModify = -1;
       },
@@ -1569,6 +1720,54 @@
         await this.characterStoreFunctions.getCharacterLists(this.userStore.user.value.userId, this.campaignStore.selectedCampaign.value.campaignId);
         this.reviveCharacter = false;
         this.idToRevive = 0;
+      },
+      adjustItemQuantity(index: number, item: InventoryItem, amount: number) {
+        if (item.quantity < 1 && amount < 1) {
+          return;
+        }
+
+        item.quantity += amount;
+        this.characterStoreFunctions.setUpdateTimer(index);
+      },
+      async showAddItem(id: number) {
+        this.indexToModify = id;
+        this.addItem = true;
+        this.items = await this.characterAgent.getItemList();
+        this.selectedItemId = this.items[1].id;
+      },
+      closeAddItem() {
+        this.addItem = false;
+        this.selectedItemId = this.items[1].id;
+        this.items = [];
+        this.newItemName = '';
+        this.indexToModify = -1;
+      },
+      async closeAddItemAndSubmit() {
+        let newInventoryItem = {} as InventoryItem;
+        if (this.selectedItemId === 0) {
+          console.log("adding");
+          const newItem = await this.characterAgent.addNewItem(this.newItemName);
+          console.log(newItem);
+          if (newItem === null) {
+            return;
+          }
+
+          newInventoryItem.itemId = newItem.id;
+          newInventoryItem.name = newItem.name;
+          newInventoryItem.quantity = 1;
+        } else {
+          let selectedItem = this.items.find(x => x.id === this.selectedItemId)!;
+          newInventoryItem.itemId = selectedItem.id;
+          newInventoryItem.name = selectedItem.name;
+          newInventoryItem.quantity = 1;
+        }
+
+        this.characterStoreFunctions.addInvetoryItem(this.indexToModify, newInventoryItem);
+
+        this.closeAddItem();
+      },
+      setSelectedItem(id: number) {
+        this.selectedItemId = id;
       }
     },
     async mounted() {
