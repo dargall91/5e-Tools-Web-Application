@@ -32,6 +32,7 @@ export interface PlayerCharacter {
 	characterClasses: CharacterClass[],
 	isJackOfAllTrades: boolean | null,
 	currency: Currency;
+	inventoryItems: InventoryItem[];
 };
 
 export interface Stress {
@@ -203,4 +204,15 @@ export interface Currency {
 	silver: number;
 	gold: number;
 	platinum: number;
-}
+};
+
+export interface InventoryItem {
+	itemId: number;
+	name: string;
+	quantity: number;
+};
+
+export interface Item {
+	id: number;
+	name: string;
+};

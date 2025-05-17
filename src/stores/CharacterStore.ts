@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import agent from '@/api/agent';
-import { PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus, StressType } from '@/models/PlayerCharacter';
+import { InventoryItem, Item, PlayerCharacter, PlayerCharacterMasterData, PrimalCompanion, PrimalCompanionType, StressStatus, StressType } from '@/models/PlayerCharacter';
 import { useToast } from 'vue-toastification';
 
 const updateDelay = 2000;
@@ -22,7 +22,7 @@ export const useCharacterStore = defineStore({
   state: () => ({
     characterList: [] as PlayerCharacter[],
     masterData: {} as PlayerCharacterMasterData,
-    deadCharacterList: [] as PlayerCharacter[]
+    deadCharacterList: [] as PlayerCharacter[],
   }),
   actions: {
     async getMasterData(campaignId: number) {
@@ -869,6 +869,20 @@ export const useCharacterStore = defineStore({
       currency.platinum += amount;
 
       this.setUpdateTimer(index);
+    },
+    addInvetoryItem(index: number, item: InventoryItem) {
+      //only add the item if it doesn't already exist in the list
+      if (!this.characterList[index].inventoryItems.some(x => x.itemId == item.itemId)) {
+        this.characterList[index].inventoryItems.push(item);
+        this.characterList[index].inventoryItems.sort((a, b) => a.name < b.name ? -1 : 1);
+
+        this.setUpdateTimer(index);
+      }
+    },
+    removeInventoryItem(characterIndex: number, itemIndex: number) {
+      this.characterList[characterIndex].inventoryItems.splice(itemIndex, 1);
+
+      this.setUpdateTimer(characterIndex);
     },
     async cancelEdits(index: number) {
       await agent.playerCharacter.getCharacter(this.characterList[index].playerCharacterId).then((data) => {
